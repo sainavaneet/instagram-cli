@@ -29,6 +29,30 @@ test('single-line layout renders "name: text" with HH:MM time', t => {
 	unmount();
 });
 
+test('xma (shared reel) renders an openable row with the author', t => {
+	const xmaMessage = {
+		id: 'x1',
+		timestamp: new Date(),
+		userId: '2',
+		username: 'oakberrybowl',
+		isOutgoing: false,
+		threadId: 't1',
+		itemType: 'xma' as const,
+		xma: {
+			url: 'https://www.instagram.com/reel/ABC123/',
+			author: 'abe.aintlinkin',
+			kind: 'clip',
+		},
+	};
+
+	const {lastFrame, unmount} = render(<MessageList messages={[xmaMessage]} />);
+	const output = lastFrame() ?? '';
+
+	t.true(output.includes('Reel by @abe.aintlinkin'), 'Shows the reel author');
+	t.true(output.includes('browser'), 'Shows the open-in-browser hint');
+	unmount();
+});
+
 test('outgoing messages are labeled "me", not "You"', t => {
 	const outgoing = mockMessages.find(m => m.isOutgoing)!;
 

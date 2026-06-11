@@ -7,7 +7,11 @@ import {
 	parseMessageItem,
 	getBestMediaUrl,
 } from '../source/utils/message-parser.js';
-import type {MessageMedia, TextMessage} from '../source/types/instagram.js';
+import type {
+	MessageMedia,
+	TextMessage,
+	XmaMessage,
+} from '../source/types/instagram.js';
 
 const mockContext = {
 	userCache: new Map<string, string>(),
@@ -99,4 +103,43 @@ test('getBestMediaUrl picks highest quality image', t => {
 	t.truthy(best);
 	t.is(best?.url, 'high.jpg');
 	t.is(best?.type, 'image');
+});
+
+test('parseMessageItem parses xma_clip into an openable xma message', t => {
+	const rawMessage = {
+		item_id: 'msg_xma_1',
+		user_id: 1002,
+		timestamp: String(Date.now() * 1000),
+		item_type: 'xma_clip',
+		xma_clip: [
+			{
+				target_url: 'https://www.instagram.com/reel/ABC123/',
+				header_title_text: 'abe.aintlinkin',
+				preview_url: 'https://cdn.example/preview.jpg',
+			},
+		],
+	};
+
+	const result = parseMessageItem(rawMessage as any, 'thread_1', mockContext);
+
+	t.is(result?.itemType, 'xma');
+	t.is(
+		(result as XmaMessage)?.xma.url,
+		'https://www.instagram.com/reel/ABC123/',
+	);
+	t.is((result as XmaMessage)?.xma.author, 'abe.aintlinkin');
+	t.is((result as XmaMessage)?.xma.kind, 'clip');
+});
+
+test('parseMessageItem falls back to placeholder for unknown type without url', t => {
+	const rawMessage = {
+		item_id: 'msg_unknown_1',
+		user_id: 1002,
+		timestamp: String(Date.now() * 1000),
+		item_type: 'some_future_type',
+	};
+
+	const result = parseMessageItem(rawMessage as any, 'thread_1', mockContext);
+
+	t.is(result?.itemType, 'placeholder');
 });

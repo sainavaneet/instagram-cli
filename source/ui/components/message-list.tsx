@@ -5,6 +5,7 @@ import type {Message, Thread} from '../../types/instagram.js';
 import {useImageProtocol} from '../hooks/use-image-protocol.js';
 import {truncateText} from '../../utils/text-utils.js';
 import {ConfigManager} from '../../config.js';
+import {hyperlink} from '../../utils/links.js';
 
 type MessageListProperties = {
 	readonly messages: Message[];
@@ -109,6 +110,21 @@ export default function MessageList({
 						{message.link.text}
 						<Text color="gray"> ({message.link.url})</Text>
 					</Text>
+				);
+			}
+
+			case 'xma': {
+				const {xma} = message;
+				const label = xma.author
+					? `🎬 Reel by @${xma.author}`
+					: `🎬 Shared ${xma.kind}`;
+				return (
+					<Box flexDirection="column">
+						<Text color="magenta">{hyperlink(`${label} ↗`, xma.url)}</Text>
+						<Text dimColor>
+							:open (or select + press o) to watch in browser
+						</Text>
+					</Box>
 				);
 			}
 

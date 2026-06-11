@@ -37,7 +37,8 @@ export type Message =
 	| MediaMessage
 	| LinkMessage
 	| PlaceholderMessage
-	| MediaShareMessage;
+	| MediaShareMessage
+	| XmaMessage;
 
 type BaseMessage = {
 	id: string;
@@ -76,6 +77,18 @@ export type MediaShareMessage = {
 	itemType: 'media_share';
 	mediaSharePost: Post;
 	mediaShareIndex?: number;
+} & BaseMessage;
+
+// A shared reel/clip/post sent as an "xma" attachment. Carries an Instagram
+// URL we can open in the browser.
+export type XmaMessage = {
+	itemType: 'xma';
+	xma: {
+		url: string;
+		author?: string;
+		kind: string; // e.g. 'clip', 'media_share'
+		previewUrl?: string;
+	};
 } & BaseMessage;
 
 export type MessageMedia = {

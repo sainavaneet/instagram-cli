@@ -33,7 +33,9 @@ if (!fs.existsSync(igdmPath)) {
 const src = JSON.parse(fs.readFileSync(igdmPath, 'utf8'));
 const auth = src.authorization_data ?? {};
 if (!auth.sessionid || !auth.ds_user_id) {
-	console.error('igdm session is missing authorization_data.sessionid/ds_user_id');
+	console.error(
+		'igdm session is missing authorization_data.sessionid/ds_user_id',
+	);
 	process.exit(1);
 }
 
@@ -57,7 +59,7 @@ if (src.ig_www_claim) {
 // still read cookies). csrftoken is intentionally left for Instagram to issue
 // on the first response.
 const cookieUrl = 'https://i.instagram.com';
-const setCookie = (kv) => {
+const setCookie = kv => {
 	ig.state.cookieJar.setCookie(
 		`${kv}; Domain=.instagram.com; Path=/; Secure; HttpOnly`,
 		cookieUrl,
@@ -75,7 +77,9 @@ delete serialized.constants; // matches SessionManager.saveSession behavior
 const dir = path.join(os.homedir(), '.instagram-cli', 'users', username);
 fs.mkdirSync(dir, {recursive: true, mode: 0o700});
 const sessionPath = path.join(dir, 'session.ts.json');
-fs.writeFileSync(sessionPath, JSON.stringify(serialized, null, 2), {mode: 0o600});
+fs.writeFileSync(sessionPath, JSON.stringify(serialized, null, 2), {
+	mode: 0o600,
+});
 
 console.log(`✓ Wrote session for @${username}`);
 console.log(`  ${sessionPath}`);

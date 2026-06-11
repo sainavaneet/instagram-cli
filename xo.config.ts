@@ -16,6 +16,10 @@ type SwitchExhaustivenessCheckOptions = [
 
 const xoConfig: FlatXoConfig = [
 	{
+		// Operational one-off scripts use the untyped private API directly.
+		ignores: ['scripts/**'],
+	},
+	{
 		files: ['**/*.{js,jsx,ts,tsx}'],
 		prettier: true,
 		semicolon: true,

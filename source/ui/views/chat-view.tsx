@@ -1,6 +1,8 @@
+import process from 'node:process';
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {Box, Text, useInput, useApp, useWindowSize} from 'ink';
 import {TerminalInfoProvider} from 'ink-picture';
+import open from 'open';
 import type {
 	Thread,
 	ChatState,
@@ -17,6 +19,7 @@ import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
 import {useClient} from '../context/client-context.js';
 import {ConfigManager} from '../../config.js';
+import {getOpenableUrl} from '../../utils/links.js';
 import {parseAndDispatchChatCommand} from '../../utils/chat-commands.js';
 import FullScreen from '../components/full-screen.js';
 import {preprocessMessage} from '../../utils/preprocess.js';
@@ -400,7 +403,9 @@ export default function ChatView({
 			}
 
 			// Update thread list: show unread status, update last message preview, move to top
-			setSystemMessage('Someone else sent you a message!');
+			// Ring the terminal bell + show who it's from.
+			process.stdout.write(String.fromCodePoint(7));
+			setSystemMessage(`📨 New message from @${message.username}`);
 			setChatState(prev => ({
 				...prev,
 				threads: updateThreadByMessage(prev.threads, message, {
@@ -608,30 +613,58 @@ export default function ChatView({
 		}
 
 		if (chatState.isSelectionMode && currentView === 'chat') {
-			if (input === 'j') {
-				setChatState(previous => {
-					const maxIndex = Math.max(0, previous.messages.length - 1);
-					const newIndex =
-						previous.selectedMessageIndex === undefined
-							? maxIndex
-							: Math.min(maxIndex, previous.selectedMessageIndex + 1);
-					return {
-						...previous,
-						selectedMessageIndex: newIndex,
-					};
-				});
-			} else if (input === 'k') {
-				setChatState(previous => {
-					const newIndex =
-						previous.selectedMessageIndex === undefined
-							? Math.max(0, previous.messages.length - 1)
-							: Math.max(0, previous.selectedMessageIndex - 1);
-					return {
-						...previous,
-						selectedMessageIndex: newIndex,
-					};
-				});
-			} else if (key.return) {
+			switch (input) {
+				case 'j': {
+					setChatState(previous => {
+						const maxIndex = Math.max(0, previous.messages.length - 1);
+						const newIndex =
+							previous.selectedMessageIndex === undefined
+								? maxIndex
+								: Math.min(maxIndex, previous.selectedMessageIndex + 1);
+						return {
+							...previous,
+							selectedMessageIndex: newIndex,
+						};
+					});
+					break;
+				}
+
+				case 'k': {
+					setChatState(previous => {
+						const newIndex =
+							previous.selectedMessageIndex === undefined
+								? Math.max(0, previous.messages.length - 1)
+								: Math.max(0, previous.selectedMessageIndex - 1);
+						return {
+							...previous,
+							selectedMessageIndex: newIndex,
+						};
+					});
+					break;
+				}
+
+				case 'o': {
+					const selected =
+						chatState.selectedMessageIndex === undefined
+							? undefined
+							: chatState.messages[chatState.selectedMessageIndex];
+					const url = selected ? getOpenableUrl(selected) : undefined;
+					if (url) {
+						void open(url);
+						setSystemMessage(`🌐 Opening in browser: ${url}`);
+					} else {
+						setSystemMessage('This message has no link to open.');
+					}
+
+					break;
+				}
+
+				default: {
+					break;
+				}
+			}
+
+			if (key.return) {
 				setChatState(previous => ({
 					...previous,
 					isSelectionMode: false,

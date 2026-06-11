@@ -40,6 +40,12 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 				return `[Shared post by @${message.mediaSharePost.user.username}]`;
 			}
 
+			case 'xma': {
+				return message.xma.author
+					? `🎬 Reel by @${message.xma.author}`
+					: `🎬 Shared ${message.xma.kind}`;
+			}
+
 			case 'link': {
 				return message.link.text;
 			}
@@ -70,9 +76,16 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 			{/* Top Row: Title, Unread, Time */}
 			<Box justifyContent="space-between">
 				<Box flexShrink={1} marginRight={2}>
+					{thread.unread && !isSelected && (
+						<Text bold color="greenBright">
+							●{' '}
+						</Text>
+					)}
 					<Text
-						bold={isSelected}
-						color={isSelected ? 'cyan' : undefined}
+						bold={isSelected || thread.unread}
+						color={
+							isSelected ? 'cyan' : thread.unread ? 'whiteBright' : undefined
+						}
 						wrap="truncate"
 					>
 						{thread.title}
@@ -80,8 +93,8 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 				</Box>
 				<Box>
 					{thread.unread && (
-						<Text bold color="green">
-							●{' '}
+						<Text bold color="greenBright">
+							NEW{' '}
 						</Text>
 					)}
 					<Text dimColor>{formatTime(thread.lastActivity)}</Text>
@@ -91,7 +104,7 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 			{/* Bottom Row: Last Message */}
 			{lastMessageText && (
 				<Box>
-					<Text dimColor wrap="truncate">
+					<Text bold={thread.unread} dimColor={!thread.unread} wrap="truncate">
 						{lastMessageText.replaceAll(/[\n\r]+/g, ' ')}
 					</Text>
 				</Box>

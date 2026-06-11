@@ -17,6 +17,7 @@ test('ThreadItem renders thread title and unread indicator', t => {
 
 	t.truthy(output?.includes(unreadThread.title), 'Should display thread title');
 	t.truthy(output?.includes('●'), 'Should display unread indicator');
+	t.truthy(output?.includes('NEW'), 'Should display the NEW badge when unread');
 	unmount();
 });
 

@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import open from 'open';
 import type {InstagramClient} from '../client.js';
 import type {ChatState, Post} from '../types/instagram.js';
 import type {ScrollViewRef} from '../ui/components/scroll-view.js';
 import {ConfigManager} from '../config.js';
+import {getOpenableUrl} from './links.js';
 import {preprocessMessage} from './preprocess.js';
 import {createContextualLogger} from './logger.js';
 import {getEmojiByName} from './emoji.js';
@@ -45,6 +47,28 @@ export const chatCommands: Record<string, ChatCommand> = {
 				selectedMessageIndex: previous.messages.length - 1,
 			}));
 			return 'Entered selection mode. Use j/k to navigate.';
+		},
+	},
+	open: {
+		description:
+			'Open the selected shared reel/post/link in your browser. Usage: :select, pick a message, then :open',
+		async handler(_arguments, {chatState}) {
+			if (chatState.selectedMessageIndex === undefined) {
+				return 'Use :select first, pick a message with j/k, then :open';
+			}
+
+			const message = chatState.messages[chatState.selectedMessageIndex];
+			if (!message) {
+				return;
+			}
+
+			const url = getOpenableUrl(message);
+			if (!url) {
+				return 'This message has no link to open.';
+			}
+
+			await open(url);
+			return `🌐 Opening in browser: ${url}`;
 		},
 	},
 	ghost: {

@@ -234,6 +234,46 @@ function normalizeMediaShareToPost(
 	};
 }
 
+type XmaAttachment = {
+	target_url?: string;
+	header_title_text?: string;
+	preview_url?: string;
+};
+
+/**
+ * Extract an openable shared reel/post ("xma" attachment) from a raw item.
+ * Instagram sends these as `xma_clip`, `xma_media_share`, `xma_reel_share`, etc.
+ * — each an array of attachments with a `target_url` we can open in a browser.
+ */
+function extractXmaAttachment(
+	item: Record<string, unknown>,
+):
+	| {url: string; author?: string; kind: string; previewUrl?: string}
+	| undefined {
+	const rawItemType = item['item_type'];
+	const itemType = typeof rawItemType === 'string' ? rawItemType : '';
+	const xmaKey = Object.keys(item).find(
+		key => key.startsWith('xma_') && Array.isArray(item[key]),
+	);
+	if (!xmaKey) {
+		return undefined;
+	}
+
+	const attachments = item[xmaKey] as XmaAttachment[];
+	const attachment = attachments[0];
+	const url = attachment?.target_url;
+	if (!url) {
+		return undefined;
+	}
+
+	return {
+		url: parseInstagramRedirectUrl(url),
+		author: attachment.header_title_text ?? undefined,
+		kind: itemType.replace(/^xma_/, '') || xmaKey.replace(/^xma_/, ''),
+		previewUrl: attachment.preview_url ?? undefined,
+	};
+}
+
 /**
  * A shared parser for message items from any source (API or Realtime).
  * @param item The raw message item object, likely MessageSyncMessage type from realtime
@@ -418,6 +458,12 @@ export function parseMessageItem(
 					itemType: 'placeholder',
 					text: `[Instagram CLI successfully blocked a brainrot]`,
 				};
+			}
+
+			// Shared reels/posts arrive as xma_* attachments with an openable URL.
+			const xma = extractXmaAttachment(item as Record<string, unknown>);
+			if (xma) {
+				return {...baseMessage, itemType: 'xma', xma};
 			}
 
 			return {

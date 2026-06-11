@@ -35,7 +35,7 @@ seen when you open a chat).
 
 ## 3. Import an existing session (avoid a second login)
 
-Instagram soft-blocks doing a *fresh* password login from a new client when
+Instagram soft-blocks doing a _fresh_ password login from a new client when
 another app recently logged in from the same IP. `scripts/import-igdm-session.mjs`
 sidesteps that by reusing the `sessionid` from an existing
 [instagrapi](https://github.com/subzeroid/instagrapi) session — it builds this
@@ -51,9 +51,36 @@ node dist/cli.js chat   # resumes the imported session, no login
 Reads work immediately via the Bearer token. The first authenticated request
 lets Instagram issue any remaining cookies.
 
+## 4. Highlight new / unread messages
+
+- Unread threads now stand out in the thread list: a bright `●` marker, a
+  `NEW` badge, a bold bright-white title, and a non-dimmed message preview
+  (`source/ui/components/thread-item.tsx`).
+- When a new DM arrives in real time, the terminal bell rings and a banner
+  shows `📨 New message from @username` (`source/ui/views/chat-view.tsx`).
+
+## 5. Open shared reels/posts in the browser
+
+Shared reels/clips/posts (Instagram `xma_*` attachments) used to render as
+`[Unsupported Type: xma_clip]`. They now show as a row like
+`🎬 Reel by @author ↗` with two ways to open the real content in your browser:
+
+- **cmd/ctrl-click** the highlighted link (OSC 8 hyperlink; works in iTerm2,
+  Kitty, WezTerm, etc.).
+- **keyboard**: `:select`, pick the message with `j`/`k`, press **`o`** — or run
+  **`:open`**. Both launch the URL via the `open` package.
+
+Code: `xma` parsing in `source/utils/message-parser.ts`, the `xma` message type
+in `source/types/instagram.ts`, rendering in `source/ui/components/message-list.tsx`,
+URL helpers in `source/utils/links.ts`, the `:open` command in
+`source/utils/chat-commands.ts`, and the `o` key in `source/ui/views/chat-view.tsx`.
+
 ## Tests
 
-- `tests/message-list-layout.test.tsx` — single-line layout + `me` label + `HH:MM`.
+- `tests/message-list-layout.test.tsx` — single-line layout, `me` label, `HH:MM`, xma row.
 - `tests/chat-commands.test.ts` — `:ghost` toggle persists to config.
+- `tests/message-parser.test.ts` — `xma_clip` parses into an openable `xma` message.
+- `tests/links.test.ts` — OSC 8 hyperlink + `getOpenableUrl`.
+- `tests/thread-item.test.tsx` — unread `NEW` badge.
 
 Run with `npm test` (prettier + xo + ava).
