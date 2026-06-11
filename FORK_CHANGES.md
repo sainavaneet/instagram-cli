@@ -33,6 +33,24 @@ seen when you open a chat).
   command in `source/utils/chat-commands.ts`, and the indicator in
   `source/ui/components/status-bar.tsx`.
 
+## 3. Import an existing session (avoid a second login)
+
+Instagram soft-blocks doing a *fresh* password login from a new client when
+another app recently logged in from the same IP. `scripts/import-igdm-session.mjs`
+sidesteps that by reusing the `sessionid` from an existing
+[instagrapi](https://github.com/subzeroid/instagrapi) session — it builds this
+tool's `instagram-private-api` session file offline (no Instagram request) so
+`loginBySession()` just resumes it.
+
+```bash
+node scripts/import-igdm-session.mjs <username> [path-to-igdm-session.json]
+node dist/cli.js config login.currentUsername <username>
+node dist/cli.js chat   # resumes the imported session, no login
+```
+
+Reads work immediately via the Bearer token. The first authenticated request
+lets Instagram issue any remaining cookies.
+
 ## Tests
 
 - `tests/message-list-layout.test.tsx` — single-line layout + `me` label + `HH:MM`.
