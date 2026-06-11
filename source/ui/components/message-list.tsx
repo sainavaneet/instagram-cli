@@ -4,6 +4,7 @@ import Image from 'ink-picture';
 import type {Message, Thread} from '../../types/instagram.js';
 import {useImageProtocol} from '../hooks/use-image-protocol.js';
 import {truncateText} from '../../utils/text-utils.js';
+import {ConfigManager} from '../../config.js';
 
 type MessageListProperties = {
 	readonly messages: Message[];
@@ -18,11 +19,14 @@ export default function MessageList({
 }: MessageListProperties) {
 	const imageProtocol = useImageProtocol();
 
+	const layout: string = ConfigManager.getInstance().get(
+		'chat.layout',
+		'compact',
+	);
+	const oneLine = layout === 'oneline';
+
 	const formatTime = (date: Date) => {
 		return date.toLocaleString('en-US', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric',
 			hour12: false,
 			hour: '2-digit',
 			minute: '2-digit',
@@ -140,6 +144,22 @@ export default function MessageList({
 						}
 					}
 
+					const label = message.isOutgoing ? 'me' : message.username;
+					const labelColor = message.isOutgoing ? 'cyan' : 'greenBright';
+					const useSingleLine =
+						oneLine && message.itemType === 'text' && !message.repliedTo;
+
+					const reactionsNode =
+						message.reactions && message.reactions.length > 0 ? (
+							<Box rowGap={1}>
+								{Object.entries(reactionCounts).map(([emoji, count]) => (
+									<Text key={emoji}>
+										{emoji} <Text dimColor>{count}</Text>
+									</Text>
+								))}
+							</Box>
+						) : null;
+
 					return (
 						<Box
 							key={message.id}
@@ -150,41 +170,48 @@ export default function MessageList({
 							borderColor={isSelected ? 'yellow' : undefined}
 							paddingX={isSelected ? 1 : 0}
 						>
-							<Box justifyContent="space-between">
-								<Text bold color={message.isOutgoing ? 'cyan' : 'greenBright'}>
-									{message.isOutgoing ? 'You' : message.username}
-								</Text>
-								<Text dimColor>{formatTime(message.timestamp)}</Text>
-							</Box>
-							<Box flexDirection="column">
-								{message.repliedTo && (
-									<Box
-										flexDirection="column"
-										borderLeftColor="gray"
-										paddingLeft={1}
-										marginBottom={1}
-									>
-										<Text dimColor>
-											Replying to <Text bold>{message.repliedTo.username}</Text>
+							{useSingleLine ? (
+								<Box justifyContent="space-between">
+									<Box flexShrink={1}>
+										<Text bold color={labelColor}>
+											{label}:{' '}
 										</Text>
-										<Text dimColor>
-											{message.repliedTo.itemType === 'text'
-												? `"${truncateText(message.repliedTo.text ?? '', 40)}"`
-												: `[A ${message.repliedTo.itemType}]`}
+										<Text>{message.text}</Text>
+									</Box>
+									<Text dimColor> {formatTime(message.timestamp)}</Text>
+								</Box>
+							) : (
+								<>
+									<Box justifyContent="space-between">
+										<Text bold color={labelColor}>
+											{label}
 										</Text>
+										<Text dimColor>{formatTime(message.timestamp)}</Text>
 									</Box>
-								)}
-								{renderMessageContent(message)}
-								{message.reactions && message.reactions.length > 0 && (
-									<Box rowGap={1}>
-										{Object.entries(reactionCounts).map(([emoji, count]) => (
-											<Text key={emoji}>
-												{emoji} <Text dimColor>{count}</Text>
-											</Text>
-										))}
+									<Box flexDirection="column">
+										{message.repliedTo && (
+											<Box
+												flexDirection="column"
+												borderLeftColor="gray"
+												paddingLeft={1}
+												marginBottom={1}
+											>
+												<Text dimColor>
+													Replying to{' '}
+													<Text bold>{message.repliedTo.username}</Text>
+												</Text>
+												<Text dimColor>
+													{message.repliedTo.itemType === 'text'
+														? `"${truncateText(message.repliedTo.text ?? '', 40)}"`
+														: `[A ${message.repliedTo.itemType}]`}
+												</Text>
+											</Box>
+										)}
+										{renderMessageContent(message)}
 									</Box>
-								)}
-							</Box>
+								</>
+							)}
+							{reactionsNode}
 						</Box>
 					);
 				})}

@@ -132,6 +132,8 @@ export type ChatState = {
 	selectedMessageIndex: number | undefined;
 	isSelectionMode: boolean;
 	recipientAlreadyRead: boolean;
+	// When true, reading does NOT send a "Seen" receipt (silent read).
+	invisibleMode: boolean;
 };
 
 export type AuthState = {

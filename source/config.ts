@@ -51,7 +51,9 @@ const DEFAULT_CONFIG: Config = {
 		currentUsername: undefined,
 	},
 	chat: {
-		layout: 'compact',
+		// 'oneline' = `name: message            HH:MM` single-line view.
+		// 'compact' = original two-line (name+time, then body).
+		layout: 'oneline',
 		colors: true,
 	},
 	privacy: {

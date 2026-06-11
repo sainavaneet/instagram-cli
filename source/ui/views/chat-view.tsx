@@ -16,6 +16,7 @@ import StatusBar from '../components/status-bar.js';
 import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
 import {useClient} from '../context/client-context.js';
+import {ConfigManager} from '../../config.js';
 import {parseAndDispatchChatCommand} from '../../utils/chat-commands.js';
 import FullScreen from '../components/full-screen.js';
 import {preprocessMessage} from '../../utils/preprocess.js';
@@ -49,6 +50,10 @@ export default function ChatView({
 		selectedMessageIndex: undefined,
 		isSelectionMode: false,
 		recipientAlreadyRead: false,
+		invisibleMode: ConfigManager.getInstance().get(
+			'privacy.invisibleMode',
+			false,
+		),
 	});
 
 	const [currentView, setCurrentView] = useState<'threads' | 'chat'>('threads');
@@ -171,7 +176,12 @@ export default function ChatView({
 								? {...previous.currentThread, unread: false}
 								: previous.currentThread,
 					}));
-					await client.markThreadAsSeen(threadId, lastMessage.id);
+					// Silent read: skip the remote "Seen" receipt when invisible mode is on.
+					if (
+						!ConfigManager.getInstance().get('privacy.invisibleMode', false)
+					) {
+						await client.markThreadAsSeen(threadId, lastMessage.id);
+					}
 				}
 			} catch (error) {
 				setChatState(previous => ({
@@ -381,8 +391,11 @@ export default function ChatView({
 					}
 				}
 
-				// Mark item as seen
-				await client.markItemAsSeen(chatState.currentThread.id, message.id);
+				// Mark item as seen (skip when silent/invisible mode is on)
+				if (!ConfigManager.getInstance().get('privacy.invisibleMode', false)) {
+					await client.markItemAsSeen(chatState.currentThread.id, message.id);
+				}
+
 				return;
 			}
 
@@ -904,6 +917,7 @@ export default function ChatView({
 						isLoading={chatState.loading}
 						realtimeStatus={realtimeStatus}
 						searchMode={searchMode}
+						invisibleMode={chatState.invisibleMode}
 					/>
 
 					<Box flexDirection="column" flexGrow={1}>

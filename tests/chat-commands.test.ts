@@ -6,6 +6,7 @@ import {
 	type ChatCommandContext,
 } from '../source/utils/chat-commands.js';
 import {mockClient} from '../source/mocks/mock-client.js';
+import {ConfigManager} from '../source/config.js';
 import type {ChatState} from '../source/types/instagram.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ function makeContext(overrides?: Partial<ChatState>): ChatCommandContext {
 			threads: [mockThread],
 			loading: false,
 			recipientAlreadyRead: false,
+			invisibleMode: false,
 			...overrides,
 		},
 		setChatState() {},
@@ -90,4 +92,45 @@ test(':upload without active thread returns undefined', async t => {
 		makeContext({currentThread: undefined}),
 	);
 	t.is(result, undefined);
+});
+
+// ── :ghost command (read-receipt toggle) ──────────────────────────────────────
+
+const ghostHandler = chatCommands['ghost']!.handler;
+
+test(':ghost toggles silent read and persists to config', async t => {
+	const config = ConfigManager.getInstance();
+	const original = config.get<boolean>('privacy.invisibleMode', false);
+
+	try {
+		// OFF -> ON
+		const onResult = await ghostHandler(
+			[],
+			makeContext({invisibleMode: false}),
+		);
+		t.true(
+			typeof onResult === 'string' && onResult.includes('ON'),
+			'Should report silent mode ON',
+		);
+		t.true(
+			config.get<boolean>('privacy.invisibleMode', false),
+			'Should persist invisibleMode=true',
+		);
+
+		// ON -> OFF
+		const offResult = await ghostHandler(
+			[],
+			makeContext({invisibleMode: true}),
+		);
+		t.true(
+			typeof offResult === 'string' && offResult.includes('OFF'),
+			'Should report silent mode OFF',
+		);
+		t.false(
+			config.get<boolean>('privacy.invisibleMode', false),
+			'Should persist invisibleMode=false',
+		);
+	} finally {
+		await config.set('privacy.invisibleMode', original); // restore real config
+	}
 });

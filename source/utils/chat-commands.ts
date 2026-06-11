@@ -47,6 +47,18 @@ export const chatCommands: Record<string, ChatCommand> = {
 			return 'Entered selection mode. Use j/k to navigate.';
 		},
 	},
+	ghost: {
+		description:
+			'Toggle silent read on/off. When ON, reading does NOT send a "Seen" receipt. Usage: :ghost',
+		async handler(_arguments, {chatState, setChatState}) {
+			const next = !chatState.invisibleMode;
+			await ConfigManager.getInstance().set('privacy.invisibleMode', next);
+			setChatState(previous => ({...previous, invisibleMode: next}));
+			return next
+				? '🚫 Silent mode ON — they will NOT see "Seen".'
+				: '👁 Silent mode OFF — opening a chat marks messages seen.';
+		},
+	},
 	reply: {
 		description: 'Reply to the selected message. Usage: :reply [text]',
 		async handler(

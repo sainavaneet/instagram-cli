@@ -10,6 +10,7 @@ type StatusBarProperties = {
 	readonly currentThread?: Thread;
 	readonly realtimeStatus: RealtimeStatus;
 	readonly searchMode?: 'username' | 'title';
+	readonly invisibleMode?: boolean;
 };
 
 export default function StatusBar({
@@ -19,6 +20,7 @@ export default function StatusBar({
 	currentThread,
 	realtimeStatus,
 	searchMode,
+	invisibleMode,
 }: StatusBarProperties) {
 	const getRealtimeIndicator = () => {
 		switch (realtimeStatus) {
@@ -52,6 +54,15 @@ export default function StatusBar({
 		return <Text color="cyan"> 🔍 {modeText}</Text>;
 	};
 
+	const getSeenModeIndicator = () => {
+		if (currentView !== 'chat') return null;
+		return invisibleMode ? (
+			<Text color="gray"> 🚫 Silent</Text>
+		) : (
+			<Text color="blue"> 👁 Seen-on</Text>
+		);
+	};
+
 	return (
 		<Box paddingX={1} justifyContent="space-between" width="100%">
 			<Box>
@@ -60,6 +71,7 @@ export default function StatusBar({
 				</Text>
 				{getRealtimeIndicator()}
 				{getSearchModeIndicator()}
+				{getSeenModeIndicator()}
 				{currentView === 'chat' && currentThread && (
 					<Text> / Chat with {currentThread.title}</Text>
 				)}
