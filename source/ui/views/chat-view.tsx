@@ -15,11 +15,13 @@ import type {RealtimeStatus, SearchResult} from '../../client.js';
 import MessageList from '../components/message-list.js';
 import InputBox from '../components/input-box.js';
 import StatusBar from '../components/status-bar.js';
+import NotificationToast from '../components/notification-toast.js';
 import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
 import {useClient} from '../context/client-context.js';
 import {ConfigManager} from '../../config.js';
 import {getOpenableUrl} from '../../utils/links.js';
+import {applyAlias} from '../../utils/aliases.js';
 import {parseAndDispatchChatCommand} from '../../utils/chat-commands.js';
 import FullScreen from '../components/full-screen.js';
 import {preprocessMessage} from '../../utils/preprocess.js';
@@ -34,6 +36,35 @@ type ChatViewProps = {
 	readonly initialSearchQuery?: string;
 	readonly initialSearchMode?: SearchMode;
 };
+
+// Short, readable preview of an incoming message for the notification toast.
+function previewOf(message: Message): string {
+	switch (message.itemType) {
+		case 'text': {
+			return message.text;
+		}
+
+		case 'xma': {
+			return '🎬 shared a reel/post';
+		}
+
+		case 'media': {
+			return '📷 sent a photo';
+		}
+
+		case 'media_share': {
+			return '📎 shared a post';
+		}
+
+		case 'link': {
+			return message.link.text;
+		}
+
+		default: {
+			return '💬 sent a message';
+		}
+	}
+}
 
 export default function ChatView({
 	initialSearchQuery,
@@ -65,6 +96,9 @@ export default function ChatView({
 	const [systemMessage, setSystemMessage] = useState<string | undefined>(
 		undefined,
 	);
+	const [newMessageAlert, setNewMessageAlert] = useState<
+		{from: string; preview: string} | undefined
+	>(undefined);
 
 	const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
 	const [searchQuery, setSearchQuery] = useState(initialSearchQuery ?? '');
@@ -105,6 +139,20 @@ export default function ChatView({
 
 		return;
 	}, [systemMessage]);
+
+	// Auto-dismiss the animated new-message toast.
+	useEffect(() => {
+		if (newMessageAlert) {
+			const timer = setTimeout(() => {
+				setNewMessageAlert(undefined);
+			}, 4500);
+			return () => {
+				clearTimeout(timer);
+			};
+		}
+
+		return;
+	}, [newMessageAlert]);
 
 	// Helper to exit search mode
 	const exitSearchMode = useCallback(() => {
@@ -403,9 +451,12 @@ export default function ChatView({
 			}
 
 			// Update thread list: show unread status, update last message preview, move to top
-			// Ring the terminal bell + show who it's from.
+			// Ring the terminal bell + show an animated toast of who it's from.
 			process.stdout.write(String.fromCodePoint(7));
-			setSystemMessage(`📨 New message from @${message.username}`);
+			setNewMessageAlert({
+				from: applyAlias(message.username),
+				preview: previewOf(message),
+			});
 			setChatState(prev => ({
 				...prev,
 				threads: updateThreadByMessage(prev.threads, message, {
@@ -975,6 +1026,13 @@ export default function ChatView({
 						searchMode={searchMode}
 						invisibleMode={chatState.invisibleMode}
 					/>
+
+					{newMessageAlert && (
+						<NotificationToast
+							from={newMessageAlert.from}
+							preview={newMessageAlert.preview}
+						/>
+					)}
 
 					<Box flexDirection="column" flexGrow={1}>
 						{renderContent()}
