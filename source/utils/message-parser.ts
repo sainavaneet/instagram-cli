@@ -252,8 +252,13 @@ function extractXmaAttachment(
 	| undefined {
 	const rawItemType = item['item_type'];
 	const itemType = typeof rawItemType === 'string' ? rawItemType : '';
+	// Shared reels/posts arrive under various keys: xma_clip, xma_media_share,
+	// generic_xma, clip, etc. Find the first non-empty attachment array.
 	const xmaKey = Object.keys(item).find(
-		key => key.startsWith('xma_') && Array.isArray(item[key]),
+		key =>
+			(key.startsWith('xma_') || key === 'generic_xma' || key === 'clip') &&
+			Array.isArray(item[key]) &&
+			(item[key] as unknown[]).length > 0,
 	);
 	if (!xmaKey) {
 		return undefined;
@@ -464,6 +469,20 @@ export function parseMessageItem(
 			const xma = extractXmaAttachment(item as Record<string, unknown>);
 			if (xma) {
 				return {...baseMessage, itemType: 'xma', xma};
+			}
+
+			// xma/share types with no usable payload (e.g. expired/empty shares).
+			const itemTypeString = String(item.item_type);
+			if (
+				itemTypeString.includes('xma') ||
+				itemTypeString === 'clip' ||
+				itemTypeString === 'generic_xma'
+			) {
+				return {
+					...baseMessage,
+					itemType: 'placeholder',
+					text: '🎬 Shared a reel/post (open it in the Instagram app)',
+				};
 			}
 
 			return {

@@ -143,3 +143,41 @@ test('parseMessageItem falls back to placeholder for unknown type without url', 
 
 	t.is(result?.itemType, 'placeholder');
 });
+
+test('parseMessageItem gives empty generic_xma a friendly placeholder', t => {
+	const rawMessage = {
+		item_id: 'msg_gx_1',
+		user_id: 1002,
+		timestamp: String(Date.now() * 1000),
+		item_type: 'generic_xma',
+		generic_xma: [],
+	};
+
+	const result = parseMessageItem(rawMessage as any, 'thread_1', mockContext);
+
+	t.is(result?.itemType, 'placeholder');
+	t.true(
+		(result as {text: string}).text.includes('Shared a reel/post'),
+		'Should show a friendly shared-content placeholder, not "Unsupported Type"',
+	);
+});
+
+test('parseMessageItem parses generic_xma with a target_url into an xma message', t => {
+	const rawMessage = {
+		item_id: 'msg_gx_2',
+		user_id: 1002,
+		timestamp: String(Date.now() * 1000),
+		item_type: 'generic_xma',
+		generic_xma: [
+			{
+				target_url: 'https://www.instagram.com/p/XYZ/',
+				header_title_text: 'someone',
+			},
+		],
+	};
+
+	const result = parseMessageItem(rawMessage as any, 'thread_1', mockContext);
+
+	t.is(result?.itemType, 'xma');
+	t.is((result as XmaMessage).xma.url, 'https://www.instagram.com/p/XYZ/');
+});
