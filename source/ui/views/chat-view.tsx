@@ -22,6 +22,7 @@ import {useClient} from '../context/client-context.js';
 import {ConfigManager} from '../../config.js';
 import {getOpenableUrl} from '../../utils/links.js';
 import {applyAlias} from '../../utils/aliases.js';
+import {closeBrowser} from '../../utils/web-sender.js';
 import {parseAndDispatchChatCommand} from '../../utils/chat-commands.js';
 import FullScreen from '../components/full-screen.js';
 import {preprocessMessage} from '../../utils/preprocess.js';
@@ -171,6 +172,25 @@ export default function ChatView({
 
 		return;
 	}, [systemMessage]);
+
+	// Close the headless send-browser when the app exits (covers Esc / Ctrl+C
+	// quits via Ink unmount; Playwright's own handlers cover signals too).
+	useEffect(() => {
+		const onSignal = () => {
+			void closeBrowser();
+		};
+
+		process.once('SIGINT', onSignal);
+		process.once('SIGTERM', onSignal);
+		process.once('SIGHUP', onSignal);
+
+		return () => {
+			void closeBrowser();
+			process.off('SIGINT', onSignal);
+			process.off('SIGTERM', onSignal);
+			process.off('SIGHUP', onSignal);
+		};
+	}, []);
 
 	// Helper to exit search mode
 	const exitSearchMode = useCallback(() => {
