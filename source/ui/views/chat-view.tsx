@@ -66,6 +66,32 @@ function previewOf(message: Message): string {
 	}
 }
 
+// Merge an incoming message into the list, de-duplicating the realtime echo of
+// a message we just sent (its real id won't match our optimistic `local-…`
+// placeholder, so we match on content and replace the placeholder instead).
+function mergeMessage(messages: Message[], incoming: Message): Message[] {
+	if (messages.some(m => m.id === incoming.id)) {
+		return messages;
+	}
+
+	if (incoming.isOutgoing && incoming.itemType === 'text') {
+		const index = messages.findIndex(
+			m =>
+				m.id.startsWith('local-') &&
+				m.isOutgoing &&
+				m.itemType === 'text' &&
+				m.text === incoming.text,
+		);
+		if (index !== -1) {
+			const next = [...messages];
+			next[index] = incoming;
+			return next;
+		}
+	}
+
+	return [...messages, incoming];
+}
+
 export default function ChatView({
 	initialSearchQuery,
 	initialSearchMode,
@@ -413,9 +439,7 @@ export default function ChatView({
 			if (message.threadId === chatState.currentThread?.id) {
 				setChatState(prev => ({
 					...prev,
-					messages: prev.messages.some(m => m.id === message.id)
-						? prev.messages
-						: [...prev.messages, message],
+					messages: mergeMessage(prev.messages, message),
 					recipientAlreadyRead: false,
 					// Update thread: move to top and update last message
 					threads: updateThreadByMessage(prev.threads, message, {
@@ -812,14 +836,24 @@ export default function ChatView({
 					}
 				}, 1000);
 
-				// Append (dedup against any realtime echo) + clear recipient read.
-				setChatState(previous => ({
-					...previous,
-					messages: previous.messages.some(m => m.id === sentMessage.id)
-						? previous.messages
-						: [...previous.messages, sentMessage],
-					recipientAlreadyRead: false,
-				}));
+				// Append the placeholder, unless the realtime echo already added this
+				// message (same id, or an outgoing text with identical content).
+				setChatState(previous => {
+					const alreadyShown = previous.messages.some(
+						m =>
+							m.id === sentMessage.id ||
+							(m.isOutgoing &&
+								m.itemType === 'text' &&
+								m.text === sentMessage.text),
+					);
+					return {
+						...previous,
+						messages: alreadyShown
+							? previous.messages
+							: [...previous.messages, sentMessage],
+						recipientAlreadyRead: false,
+					};
+				});
 
 				return () => {
 					clearTimeout(timeout);
