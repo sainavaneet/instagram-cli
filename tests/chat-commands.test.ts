@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'ava';
 import {
 	chatCommands,
@@ -99,8 +102,19 @@ test(':upload without active thread returns undefined', async t => {
 const ghostHandler = chatCommands['ghost']!.handler;
 
 test(':ghost toggles silent read and persists to config', async t => {
+	// Back up the real config file so this test never permanently changes it.
+	const configPath = path.join(
+		os.homedir(),
+		'.instagram-cli',
+		'config.ts.yaml',
+	);
+	const backup = fs.existsSync(configPath)
+		? fs.readFileSync(configPath, 'utf8')
+		: undefined;
+
 	const config = ConfigManager.getInstance();
-	const original = config.get<boolean>('privacy.invisibleMode', false);
+	// Load the real config first so set() round-trips without clobbering keys.
+	await config.initialize();
 
 	try {
 		// OFF -> ON
@@ -131,6 +145,13 @@ test(':ghost toggles silent read and persists to config', async t => {
 			'Should persist invisibleMode=false',
 		);
 	} finally {
-		await config.set('privacy.invisibleMode', original); // restore real config
+		// Restore the user's real config file byte-for-byte.
+		if (backup === undefined) {
+			if (fs.existsSync(configPath)) {
+				fs.unlinkSync(configPath);
+			}
+		} else {
+			fs.writeFileSync(configPath, backup, 'utf8');
+		}
 	}
 });
