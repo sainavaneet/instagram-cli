@@ -45,7 +45,7 @@ export default function MessageList({
 		}
 
 		if (recipientHasSeen) {
-			return <Text color="cyan">✓✓ </Text>;
+			return <Text color="green">✓✓ </Text>;
 		}
 
 		if (message.deliveryStatus === 'sent') {
