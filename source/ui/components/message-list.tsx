@@ -79,22 +79,35 @@ export default function MessageList({
 				const {media} = message;
 				// Video
 				if (media.media_type === 2) {
-					const videoUrl = media.video_versions?.[0]?.url;
-					return <Text dimColor>{`[Sent a video: ${videoUrl}]`}</Text>;
+					return (
+						<Box flexDirection="column">
+							<Text dimColor>📹 Sent a video</Text>
+							<Text dimColor>:open (or select + press o) to watch</Text>
+						</Box>
+					);
 				}
 
 				// Image
 				const imageUrl = media.image_versions2?.candidates[0]?.url;
 				if (imageUrl) {
 					return (
-						<Box
-							borderStyle="round"
-							borderColor="cyan"
-							width={32}
-							height={17}
-							flexDirection="column"
-						>
-							<Image src={imageUrl} alt="Sent image" protocol={imageProtocol} />
+						<Box flexDirection="column">
+							<Box
+								borderStyle="round"
+								borderColor="cyan"
+								width={32}
+								height={17}
+								flexDirection="column"
+							>
+								<Image
+									src={imageUrl}
+									alt="Sent image"
+									protocol={imageProtocol}
+								/>
+							</Box>
+							<Text dimColor>
+								:open (or select + press o) to view full size
+							</Text>
 						</Box>
 					);
 				}

@@ -5,6 +5,7 @@
  */
 
 import type {Message} from '../types/instagram.js';
+import {getBestMediaUrl} from './message-parser.js';
 
 const ESC = String.fromCodePoint(27); // \x1B
 const BEL = String.fromCodePoint(7); // \x07
@@ -20,6 +21,11 @@ export function getOpenableUrl(message: Message): string | undefined {
 
 	if (message.itemType === 'link') {
 		return message.link.url;
+	}
+
+	// Photos/videos: open the full-res media URL in the browser/viewer.
+	if (message.itemType === 'media') {
+		return getBestMediaUrl(message.media)?.url;
 	}
 
 	return undefined;

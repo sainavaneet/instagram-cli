@@ -41,6 +41,26 @@ test('getOpenableUrl returns the url for a link message', t => {
 	t.is(getOpenableUrl(message), 'https://example.com');
 });
 
+test('getOpenableUrl returns the best media url for a photo message', t => {
+	const message: Message = {
+		...base,
+		itemType: 'media',
+		media: {
+			id: 'm9',
+			media_type: 1,
+			original_width: 1080,
+			original_height: 1080,
+			image_versions2: {
+				candidates: [
+					{url: 'https://cdn/low.jpg', width: 320, height: 320},
+					{url: 'https://cdn/high.jpg', width: 1080, height: 1080},
+				],
+			},
+		},
+	} as unknown as Message;
+	t.is(getOpenableUrl(message), 'https://cdn/high.jpg');
+});
+
 test('getOpenableUrl returns undefined for a plain text message', t => {
 	const message: Message = {...base, itemType: 'text', text: 'hi'};
 	t.is(getOpenableUrl(message), undefined);
