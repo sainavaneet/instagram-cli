@@ -710,6 +710,21 @@ export default function ChatView({
 			return;
 		}
 
+		// Keyboard scrolling in a chat (mouse wheel doesn't work in every
+		// terminal, e.g. Warp). PageUp/PageDown or Ctrl+U/Ctrl+D scroll history.
+		if (currentView === 'chat' && !chatState.isSelectionMode) {
+			const page = Math.max(1, messageAreaHeight - 1);
+			if (key.pageUp || (key.ctrl && input === 'u')) {
+				scrollViewRef.current?.scrollTo(current => current - page);
+				return;
+			}
+
+			if (key.pageDown || (key.ctrl && input === 'd')) {
+				scrollViewRef.current?.scrollTo(current => current + page);
+				return;
+			}
+		}
+
 		// Search mode activation (only in threads view)
 		if (currentView === 'threads' && !chatState.loading) {
 			if (input === '/') {
@@ -1078,7 +1093,7 @@ export default function ChatView({
 			return 'j/k: navigate messages, Enter: confirm, Esc: exit selection';
 		}
 
-		return 'Esc: back to threads, Ctrl+C: Clear input';
+		return 'Esc: back · PgUp/PgDn or Ctrl+U/D: scroll · Ctrl+C: clear';
 	};
 
 	if (viewingPost) {
