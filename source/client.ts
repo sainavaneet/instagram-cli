@@ -43,6 +43,7 @@ import {
 	getBestMediaUrl,
 } from './utils/message-parser.js';
 import {createContextualLogger} from './utils/logger.js';
+import {hasWebSession, sendViaBrowser} from './utils/web-sender.js';
 
 export type LoginResult = {
 	success: boolean;
@@ -800,16 +801,15 @@ export class InstagramClient extends EventEmitter {
 	}
 
 	public async sendMessage(threadId: string, text: string): Promise<string> {
-		// if (this.realtimeStatus === 'connected' && this.realtime?.direct) {
-		// 	try {
-		// 		await this.realtime.direct.sendText({threadId, text});
-		// 		return;
-		// 	} catch {
-		// 		this.logger.warn('MQTT sendMessage failed, falling back to API.');
-		// 	}
-		// }
+		// Prefer the real browser (instagram.com) when a web session is set up:
+		// mobile-API sends get purged by Instagram's anti-automation, but web
+		// sends persist. If browser sending fails we surface the error rather
+		// than silently falling back to the unreliable API.
+		if (await hasWebSession()) {
+			await sendViaBrowser(threadId, text);
+			return '';
+		}
 
-		// Fallback to API if MQTT not available, failed, or not ready
 		try {
 			const result = await this.ig.entity
 				.directThread(threadId)
