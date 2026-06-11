@@ -113,8 +113,14 @@ export default function ChatView({
 	const [viewingPost, setViewingPost] = useState<Post | undefined>(undefined);
 	const imageProtocol = useImageProtocol();
 
-	// Calculate available height for messages (total height minus status bar and input area)
-	const messageAreaHeight = Math.max(1, height - 8);
+	// Calculate available height for messages (total height minus status bar and
+	// input area). The notification toast is a 3-row box, so when it's shown we
+	// shrink the message area by that much to avoid overflowing the input/help.
+	const TOAST_ROWS = 3;
+	const messageAreaHeight = Math.max(
+		1,
+		height - 8 - (newMessageAlert ? TOAST_ROWS : 0),
+	);
 
 	// Handler for viewing media share posts
 	const handleViewMediaShare = useCallback((post: Post) => {
