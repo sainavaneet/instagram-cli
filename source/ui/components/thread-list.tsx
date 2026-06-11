@@ -8,11 +8,14 @@ import {
 } from '../hooks/use-content-size.js';
 import ThreadItem from './thread-item.js';
 
+const NO_TYPING: readonly string[] = [];
+
 type ThreadListProperties = {
 	readonly threads: Thread[];
 	readonly onSelect: (thread: Thread) => void;
 	readonly onScrollToBottom?: () => void;
 	readonly isSearchMode?: boolean;
+	readonly typingThreadIds?: readonly string[];
 };
 
 export default function ThreadList({
@@ -21,6 +24,7 @@ export default function ThreadList({
 	onScrollToBottom,
 	// isSearchMode can be used for future enhancements like showing match scores
 	isSearchMode: _isSearchMode = false,
+	typingThreadIds = NO_TYPING,
 }: ThreadListProperties) {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [scrollOffset, setScrollOffset] = useState(0);
@@ -166,6 +170,7 @@ export default function ThreadList({
 						<ThreadItem
 							thread={thread}
 							isSelected={absoluteIndex === selectedIndex}
+							isTyping={typingThreadIds.includes(thread.id)}
 						/>
 					</Box>
 				);

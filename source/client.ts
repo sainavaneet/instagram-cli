@@ -1206,6 +1206,29 @@ export class InstagramClient extends EventEmitter {
 			}
 		});
 
+		// Typing / activity indicators arrive on the 'direct' topic.
+		this.realtime.on('direct', wrapper => {
+			const match = /\/direct_v2\/threads\/([^/]+)\/activity_indicator/.exec(
+				wrapper.path ?? '',
+			);
+			const threadId = match?.[1];
+			const {value} = wrapper;
+			if (!threadId || typeof value === 'string' || !value) {
+				return;
+			}
+
+			const senderId = String(value.sender_id ?? '');
+			if (!senderId || senderId === this.ig.state.cookieUserId) {
+				return;
+			}
+
+			this.emit('typing', {
+				threadId,
+				userId: senderId,
+				isTyping: Number(value.activity_status) === 1,
+			});
+		});
+
 		await this.realtime.connect({
 			graphQlSubs: [
 				GraphQLSubscriptions.getAppPresenceSubscription(),

@@ -6,9 +6,14 @@ import {threadDisplayName} from '../../utils/aliases.js';
 type ThreadItemProperties = {
 	readonly thread: Thread;
 	readonly isSelected: boolean;
+	readonly isTyping?: boolean;
 };
 
-export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
+export default function ThreadItem({
+	thread,
+	isSelected,
+	isTyping = false,
+}: ThreadItemProperties) {
 	const formatTime = (date: Date) => {
 		const now = new Date();
 		const diff = now.getTime() - date.getTime();
@@ -102,13 +107,25 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 				</Box>
 			</Box>
 
-			{/* Bottom Row: Last Message */}
-			{lastMessageText && (
+			{/* Bottom Row: Last message, or a typing indicator */}
+			{isTyping ? (
 				<Box>
-					<Text bold={thread.unread} dimColor={!thread.unread} wrap="truncate">
-						{lastMessageText.replaceAll(/[\n\r]+/g, ' ')}
+					<Text italic color="cyan">
+						✏️ typing…
 					</Text>
 				</Box>
+			) : (
+				lastMessageText && (
+					<Box>
+						<Text
+							bold={thread.unread}
+							dimColor={!thread.unread}
+							wrap="truncate"
+						>
+							{lastMessageText.replaceAll(/[\n\r]+/g, ' ')}
+						</Text>
+					</Box>
+				)
 			)}
 		</Box>
 	);

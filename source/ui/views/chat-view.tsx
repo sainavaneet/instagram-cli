@@ -17,12 +17,13 @@ import InputBox from '../components/input-box.js';
 import StatusBar from '../components/status-bar.js';
 import NotificationToast from '../components/notification-toast.js';
 import SendStatus, {type SendState} from '../components/send-status.js';
+import TypingIndicator from '../components/typing-indicator.js';
 import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
 import {useClient} from '../context/client-context.js';
 import {ConfigManager} from '../../config.js';
 import {getOpenableUrl} from '../../utils/links.js';
-import {applyAlias} from '../../utils/aliases.js';
+import {applyAlias, threadDisplayName} from '../../utils/aliases.js';
 import {closeBrowser} from '../../utils/web-sender.js';
 import {parseAndDispatchChatCommand} from '../../utils/chat-commands.js';
 import FullScreen from '../components/full-screen.js';
@@ -128,6 +129,8 @@ export default function ChatView({
 		Array<{from: string; preview: string; threadId: string}>
 	>([]);
 	const [sendStatus, setSendStatus] = useState<SendState>('idle');
+	const [typingThreadIds, setTypingThreadIds] = useState<string[]>([]);
+	const typingTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
 	const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
 	const [searchQuery, setSearchQuery] = useState(initialSearchQuery ?? '');
@@ -206,6 +209,53 @@ export default function ChatView({
 
 		return;
 	}, [sendStatus]);
+
+	// Typing indicators: track which threads currently show "… is typing",
+	// auto-expiring each after a few seconds if no further typing event.
+	useEffect(() => {
+		if (!client) return;
+
+		const onTyping = (event: {threadId: string; isTyping: boolean}) => {
+			const timers = typingTimers.current;
+			const existing = timers.get(event.threadId);
+			if (existing) {
+				clearTimeout(existing);
+				timers.delete(event.threadId);
+			}
+
+			if (event.isTyping) {
+				setTypingThreadIds(previous =>
+					previous.includes(event.threadId)
+						? previous
+						: [...previous, event.threadId],
+				);
+				timers.set(
+					event.threadId,
+					setTimeout(() => {
+						setTypingThreadIds(previous =>
+							previous.filter(id => id !== event.threadId),
+						);
+						timers.delete(event.threadId);
+					}, 6000),
+				);
+			} else {
+				setTypingThreadIds(previous =>
+					previous.filter(id => id !== event.threadId),
+				);
+			}
+		};
+
+		client.on('typing', onTyping);
+		const timers = typingTimers.current;
+		return () => {
+			client.off('typing', onTyping);
+			for (const timer of timers.values()) {
+				clearTimeout(timer);
+			}
+
+			timers.clear();
+		};
+	}, [client]);
 
 	// Helper to exit search mode
 	const exitSearchMode = useCallback(() => {
@@ -473,6 +523,11 @@ export default function ChatView({
 		if (!client) return;
 
 		const handleMessage = async (message: Message) => {
+			// A message arrived → they've stopped typing in that thread.
+			setTypingThreadIds(previous =>
+				previous.filter(id => id !== message.threadId),
+			);
+
 			// for current thread, append to message list and handle view changes
 			if (message.threadId === chatState.currentThread?.id) {
 				setChatState(prev => ({
@@ -1009,6 +1064,7 @@ export default function ChatView({
 					<ThreadList
 						isSearchMode={Boolean(searchMode)}
 						threads={threadsToDisplay}
+						typingThreadIds={typingThreadIds}
 						onScrollToBottom={searchMode ? undefined : handleLoadMoreThreads}
 						onSelect={handleThreadSelect}
 					/>
@@ -1063,6 +1119,14 @@ export default function ChatView({
 					</Box>
 				)}
 				<Box flexDirection="column" flexShrink={0}>
+					{chatState.currentThread &&
+						typingThreadIds.includes(chatState.currentThread.id) && (
+							<Box paddingX={1}>
+								<TypingIndicator
+									name={threadDisplayName(chatState.currentThread)}
+								/>
+							</Box>
+						)}
 					{systemMessage && (
 						<Box marginTop={1}>
 							<Text color="yellow">{systemMessage}</Text>
