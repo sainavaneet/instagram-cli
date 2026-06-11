@@ -737,7 +737,22 @@ export default function ChatView({
 			});
 
 			if (finalText) {
-				await client.sendMessage(chatState.currentThread.id, finalText);
+				const threadId = chatState.currentThread.id;
+				const itemId = await client.sendMessage(threadId, finalText);
+
+				// Optimistically show the sent message immediately. Without this it
+				// only appears if realtime MQTT echoes it back — which is unreliable
+				// (esp. on a resumed session), so sent messages could "disappear".
+				const sentMessage: Message = {
+					id: itemId || `local-${Date.now()}`,
+					timestamp: new Date(),
+					userId: 'me',
+					username: 'me',
+					isOutgoing: true,
+					threadId,
+					itemType: 'text',
+					text: finalText,
+				};
 
 				// Scroll to bottom after sending a message
 				// Timeout to ensure message is rendered before scrolling
@@ -747,8 +762,14 @@ export default function ChatView({
 					}
 				}, 1000);
 
-				// Clear recipient read status on new message sent
-				setChatState(previous => ({...previous, recipientAlreadyRead: false}));
+				// Append (dedup against any realtime echo) + clear recipient read.
+				setChatState(previous => ({
+					...previous,
+					messages: previous.messages.some(m => m.id === sentMessage.id)
+						? previous.messages
+						: [...previous.messages, sentMessage],
+					recipientAlreadyRead: false,
+				}));
 
 				return () => {
 					clearTimeout(timeout);
