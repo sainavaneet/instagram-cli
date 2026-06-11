@@ -261,13 +261,16 @@ export default function ChatView({
 					}
 				}
 
-				const {messages, cursor} = await client.getMessages(threadId);
+				const {messages, cursor, recipientHasSeen} =
+					await client.getMessages(threadId);
 
 				setChatState(previous => ({
 					...previous,
 					messages,
 					loading: false,
 					messageCursor: cursor,
+					// Reflect whether they've already seen our last message (green ticks).
+					recipientAlreadyRead: recipientHasSeen,
 				}));
 
 				// Mark thread as seen

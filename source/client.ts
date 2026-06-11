@@ -78,6 +78,33 @@ function extractItemId(result: BroadcastResponse): string {
 	return result.item_id;
 }
 
+// True if any other participant's last_seen_at is at/after our most recent
+// outgoing message — i.e. they've seen it (drives the green read ticks).
+function computeRecipientSeen(
+	rawItems: any[],
+	lastSeenAt: Record<string, {timestamp?: string}>,
+	me: string,
+): boolean {
+	// rawItems is newest-first, so the first one from us is our latest.
+	const lastOutgoing = rawItems.find(item => String(item.user_id) === me);
+	if (!lastOutgoing) {
+		return false;
+	}
+
+	const sentTimestamp = Number(lastOutgoing.timestamp);
+	for (const [userId, info] of Object.entries(lastSeenAt)) {
+		if (
+			userId !== me &&
+			info?.timestamp &&
+			Number(info.timestamp) >= sentTimestamp
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // eslint-disable-next-line unicorn/prefer-event-target
 export class InstagramClient extends EventEmitter {
 	public static async cleanupSessions(): Promise<void> {
@@ -752,17 +779,29 @@ export class InstagramClient extends EventEmitter {
 	public async getMessages(
 		threadId: string,
 		cursor?: string,
-	): Promise<{messages: Message[]; cursor: string | undefined}> {
+	): Promise<{
+		messages: Message[];
+		cursor: string | undefined;
+		recipientHasSeen: boolean;
+	}> {
 		try {
 			const thread = this.ig.feed.directThread({
 				thread_id: threadId,
 				oldest_cursor: cursor ?? '',
 			});
-			const items = await thread.items();
-			const messages = items
+			// Use the full thread response (not just items()) so we can read
+			// last_seen_at and know whether the recipient has seen our last message.
+			const body = (await thread.request()) as unknown as {
+				thread: {
+					items: any[];
+					last_seen_at?: Record<string, {timestamp?: string}>;
+				};
+			};
+			const rawItems = body.thread.items ?? [];
+			const messages = rawItems
 				.map(item =>
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-					parseMessageItem(item as any, threadId, {
+					parseMessageItem(item, threadId, {
 						userCache: this.userCache,
 						currentUserId: this.ig.state.cookieUserId,
 					}),
@@ -772,6 +811,11 @@ export class InstagramClient extends EventEmitter {
 			return {
 				messages: messages.reverse(),
 				cursor: thread.cursor,
+				recipientHasSeen: computeRecipientSeen(
+					rawItems,
+					body.thread.last_seen_at ?? {},
+					this.ig.state.cookieUserId,
+				),
 			};
 		} catch (error) {
 			this.logger.error('Failed to fetch messages', error);
@@ -827,7 +871,7 @@ export class InstagramClient extends EventEmitter {
 					offline_threading_id: oid,
 				},
 			});
-			return extractItemId(result as BroadcastResponse);
+			return extractItemId(result);
 		} catch (error) {
 			this.logger.error('Failed to send message', error);
 			throw error;
