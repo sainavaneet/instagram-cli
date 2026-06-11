@@ -97,7 +97,7 @@ export default function ChatView({
 		undefined,
 	);
 	const [newMessageAlert, setNewMessageAlert] = useState<
-		{from: string; preview: string} | undefined
+		{from: string; preview: string; threadId: string} | undefined
 	>(undefined);
 
 	const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
@@ -140,20 +140,6 @@ export default function ChatView({
 		return;
 	}, [systemMessage]);
 
-	// Auto-dismiss the animated new-message toast.
-	useEffect(() => {
-		if (newMessageAlert) {
-			const timer = setTimeout(() => {
-				setNewMessageAlert(undefined);
-			}, 4500);
-			return () => {
-				clearTimeout(timer);
-			};
-		}
-
-		return;
-	}, [newMessageAlert]);
-
 	// Helper to exit search mode
 	const exitSearchMode = useCallback(() => {
 		setSearchMode(undefined);
@@ -164,6 +150,11 @@ export default function ChatView({
 	const handleThreadSelect = useCallback(
 		async (thread: Thread) => {
 			if (!client) return;
+
+			// Opening the thread the alert is about = read it, so dismiss the toast.
+			setNewMessageAlert(previous =>
+				previous?.threadId === thread.id ? undefined : previous,
+			);
 
 			if (searchMode) {
 				exitSearchMode();
@@ -456,6 +447,7 @@ export default function ChatView({
 			setNewMessageAlert({
 				from: applyAlias(message.username),
 				preview: previewOf(message),
+				threadId: message.threadId,
 			});
 			setChatState(prev => ({
 				...prev,
