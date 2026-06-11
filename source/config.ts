@@ -12,6 +12,9 @@ type LoginConfig = {
 type ChatConfig = {
 	layout: string;
 	colors: boolean;
+	// How to send DMs: 'auto' (browser if a web session exists, else API),
+	// 'api' (fixed API send with offline_threading_id), or 'browser'.
+	sendMethod: string;
 };
 
 type PrivacyConfig = {
@@ -57,6 +60,7 @@ const DEFAULT_CONFIG: Config = {
 		// 'compact' = original two-line (name+time, then body).
 		layout: 'oneline',
 		colors: true,
+		sendMethod: 'auto',
 	},
 	privacy: {
 		invisibleMode: false,

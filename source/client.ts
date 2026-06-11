@@ -44,6 +44,7 @@ import {
 } from './utils/message-parser.js';
 import {createContextualLogger} from './utils/logger.js';
 import {hasWebSession, sendViaBrowser} from './utils/web-sender.js';
+import {generateOfflineThreadingId} from './utils/threading.js';
 
 export type LoginResult = {
 	success: boolean;
@@ -801,20 +802,32 @@ export class InstagramClient extends EventEmitter {
 	}
 
 	public async sendMessage(threadId: string, text: string): Promise<string> {
-		// Prefer the real browser (instagram.com) when a web session is set up:
-		// mobile-API sends get purged by Instagram's anti-automation, but web
-		// sends persist. If browser sending fails we surface the error rather
-		// than silently falling back to the unreliable API.
-		if (await hasWebSession()) {
+		const method: string = this.configManager.get('chat.sendMethod', 'auto');
+		const useBrowser =
+			method === 'browser' || (method === 'auto' && (await hasWebSession()));
+
+		// Browser send (instagram.com): most trusted channel, but slower.
+		if (useBrowser) {
 			await sendViaBrowser(threadId, text);
 			return '';
 		}
 
+		// Fixed API send: attach a fresh time-based offline_threading_id (+ matching
+		// client_context/mutation_token) so Instagram doesn't drop the message as a
+		// duplicate — the library omits this, which caused vanishing messages.
+		const oid = generateOfflineThreadingId();
 		try {
-			const result = await this.ig.entity
-				.directThread(threadId)
-				.broadcastText(text);
-			return extractItemId(result);
+			const result = await this.ig.directThread.broadcast({
+				item: 'text',
+				threadIds: threadId,
+				form: {
+					text,
+					client_context: oid,
+					mutation_token: oid,
+					offline_threading_id: oid,
+				},
+			});
+			return extractItemId(result as BroadcastResponse);
 		} catch (error) {
 			this.logger.error('Failed to send message', error);
 			throw error;
