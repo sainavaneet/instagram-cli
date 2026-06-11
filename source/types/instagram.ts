@@ -51,6 +51,8 @@ type BaseMessage = {
 	repliedTo?: RepliedToMessage;
 	item_id?: string;
 	client_context?: string;
+	// WhatsApp-style delivery state for outgoing messages.
+	deliveryStatus?: 'sent' | 'delivered' | 'read';
 };
 
 export type TextMessage = {

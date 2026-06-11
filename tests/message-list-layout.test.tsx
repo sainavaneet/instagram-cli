@@ -63,3 +63,62 @@ test('outgoing messages are labeled "me", not "You"', t => {
 	t.false(output.includes('You'), 'Should not use the old "You" label');
 	unmount();
 });
+
+const outgoingText = (deliveryStatus?: 'sent' | 'delivered' | 'read') => ({
+	id: 'o1',
+	timestamp: new Date(),
+	userId: 'me',
+	username: 'me',
+	isOutgoing: true,
+	threadId: 't1',
+	itemType: 'text' as const,
+	text: 'hello there',
+	deliveryStatus,
+});
+
+test('outgoing "sent" message shows a single tick', t => {
+	const {lastFrame, unmount} = render(
+		<MessageList messages={[outgoingText('sent')]} recipientHasSeen={false} />,
+	);
+	const output = lastFrame() ?? '';
+	t.true(output.includes('✓'), 'Should show a tick');
+	t.false(output.includes('✓✓'), 'Sent should be a single tick, not double');
+	unmount();
+});
+
+test('outgoing delivered (not seen) shows double ticks', t => {
+	const {lastFrame, unmount} = render(
+		<MessageList messages={[outgoingText()]} recipientHasSeen={false} />,
+	);
+	t.true(
+		(lastFrame() ?? '').includes('✓✓'),
+		'Delivered should be double ticks',
+	);
+	unmount();
+});
+
+test('outgoing message shows double ticks when recipient has seen', t => {
+	const {lastFrame, unmount} = render(
+		<MessageList recipientHasSeen messages={[outgoingText('sent')]} />,
+	);
+	t.true((lastFrame() ?? '').includes('✓✓'), 'Read should be double ticks');
+	unmount();
+});
+
+test('incoming messages have no delivery ticks', t => {
+	const incoming = {
+		id: 'i1',
+		timestamp: new Date(),
+		userId: '2',
+		username: 'oakberrybowl',
+		isOutgoing: false,
+		threadId: 't1',
+		itemType: 'text' as const,
+		text: 'hi back',
+	};
+	const {lastFrame, unmount} = render(
+		<MessageList recipientHasSeen messages={[incoming]} />,
+	);
+	t.false((lastFrame() ?? '').includes('✓'), 'Incoming should have no ticks');
+	unmount();
+});

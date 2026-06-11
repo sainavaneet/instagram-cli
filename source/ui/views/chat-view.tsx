@@ -752,6 +752,7 @@ export default function ChatView({
 					threadId,
 					itemType: 'text',
 					text: finalText,
+					deliveryStatus: 'sent',
 				};
 
 				// Scroll to bottom after sending a message
@@ -908,6 +909,7 @@ export default function ChatView({
 							currentThread={chatState.currentThread}
 							messages={chatState.messages}
 							selectedMessageIndex={chatState.selectedMessageIndex}
+							recipientHasSeen={chatState.recipientAlreadyRead}
 						/>
 					</ScrollView>
 				)}

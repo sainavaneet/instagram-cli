@@ -11,12 +11,15 @@ type MessageListProperties = {
 	readonly messages: Message[];
 	readonly currentThread?: Thread;
 	readonly selectedMessageIndex?: number | undefined;
+	// True when the recipient has seen the conversation (colors the read ticks).
+	readonly recipientHasSeen?: boolean;
 };
 
 export default function MessageList({
 	messages,
 	currentThread,
 	selectedMessageIndex,
+	recipientHasSeen,
 }: MessageListProperties) {
 	const imageProtocol = useImageProtocol();
 
@@ -32,6 +35,24 @@ export default function MessageList({
 			hour: '2-digit',
 			minute: '2-digit',
 		});
+	};
+
+	// WhatsApp-style delivery ticks (outgoing only):
+	// ✓ sent · ✓✓ delivered · ✓✓ (colored) read.
+	const renderTicks = (message: Message) => {
+		if (!message.isOutgoing) {
+			return null;
+		}
+
+		if (recipientHasSeen) {
+			return <Text color="cyan">✓✓ </Text>;
+		}
+
+		if (message.deliveryStatus === 'sent') {
+			return <Text dimColor>✓ </Text>;
+		}
+
+		return <Text dimColor>✓✓ </Text>;
 	};
 
 	const mediaShareIndexMap = useMemo(() => {
@@ -194,7 +215,10 @@ export default function MessageList({
 										</Text>
 										<Text>{message.text}</Text>
 									</Box>
-									<Text dimColor> {formatTime(message.timestamp)}</Text>
+									<Box>
+										{renderTicks(message)}
+										<Text dimColor>{formatTime(message.timestamp)}</Text>
+									</Box>
 								</Box>
 							) : (
 								<>
@@ -202,7 +226,10 @@ export default function MessageList({
 										<Text bold color={labelColor}>
 											{label}
 										</Text>
-										<Text dimColor>{formatTime(message.timestamp)}</Text>
+										<Box>
+											{renderTicks(message)}
+											<Text dimColor>{formatTime(message.timestamp)}</Text>
+										</Box>
 									</Box>
 									<Box flexDirection="column">
 										{message.repliedTo && (
