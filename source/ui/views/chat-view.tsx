@@ -124,9 +124,9 @@ export default function ChatView({
 	const [systemMessage, setSystemMessage] = useState<string | undefined>(
 		undefined,
 	);
-	const [newMessageAlert, setNewMessageAlert] = useState<
-		{from: string; preview: string; threadId: string} | undefined
-	>(undefined);
+	const [newMessageAlerts, setNewMessageAlerts] = useState<
+		Array<{from: string; preview: string; threadId: string}>
+	>([]);
 	const [sendStatus, setSendStatus] = useState<SendState>('idle');
 
 	const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
@@ -145,11 +145,10 @@ export default function ChatView({
 	// Calculate available height for messages (total height minus status bar and
 	// input area). The notification toast is a 3-row box, so when it's shown we
 	// shrink the message area by that much to avoid overflowing the input/help.
-	const TOAST_ROWS = 3;
-	const messageAreaHeight = Math.max(
-		1,
-		height - 8 - (newMessageAlert ? TOAST_ROWS : 0),
-	);
+	// The toast box grows with each stacked message (2 borders + header + N lines).
+	const toastRows =
+		newMessageAlerts.length > 0 ? newMessageAlerts.length + 3 : 0;
+	const messageAreaHeight = Math.max(1, height - 8 - toastRows);
 
 	// Handler for viewing media share posts
 	const handleViewMediaShare = useCallback((post: Post) => {
@@ -219,9 +218,9 @@ export default function ChatView({
 		async (thread: Thread) => {
 			if (!client) return;
 
-			// Opening the thread the alert is about = read it, so dismiss the toast.
-			setNewMessageAlert(previous =>
-				previous?.threadId === thread.id ? undefined : previous,
+			// Opening a thread = read it, so drop its notifications from the toast.
+			setNewMessageAlerts(previous =>
+				previous.filter(alert => alert.threadId !== thread.id),
 			);
 
 			if (searchMode) {
@@ -510,11 +509,16 @@ export default function ChatView({
 			// Update thread list: show unread status, update last message preview, move to top
 			// Ring the terminal bell + show an animated toast of who it's from.
 			process.stdout.write(String.fromCodePoint(7));
-			setNewMessageAlert({
-				from: applyAlias(message.username),
-				preview: previewOf(message),
-				threadId: message.threadId,
-			});
+			setNewMessageAlerts(previous =>
+				[
+					...previous,
+					{
+						from: applyAlias(message.username),
+						preview: previewOf(message),
+						threadId: message.threadId,
+					},
+				].slice(-6),
+			);
 			setChatState(prev => ({
 				...prev,
 				threads: updateThreadByMessage(prev.threads, message, {
@@ -1103,11 +1107,8 @@ export default function ChatView({
 						invisibleMode={chatState.invisibleMode}
 					/>
 
-					{newMessageAlert && (
-						<NotificationToast
-							from={newMessageAlert.from}
-							preview={newMessageAlert.preview}
-						/>
+					{newMessageAlerts.length > 0 && (
+						<NotificationToast alerts={newMessageAlerts} />
 					)}
 
 					<Box flexDirection="column" flexGrow={1}>

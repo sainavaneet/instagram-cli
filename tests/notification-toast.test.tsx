@@ -5,9 +5,11 @@ import test from 'ava';
 import {render} from 'ink-testing-library';
 import NotificationToast from '../source/ui/components/notification-toast.js';
 
-test('notification toast shows the sender and preview', t => {
+test('notification toast shows a single sender and preview', t => {
 	const {lastFrame, unmount} = render(
-		<NotificationToast from="Bestie" preview="hey are you free tonight?" />,
+		<NotificationToast
+			alerts={[{from: 'Bestie', preview: 'hey are you free tonight?'}]}
+		/>,
 	);
 	const output = lastFrame() ?? '';
 
@@ -17,13 +19,28 @@ test('notification toast shows the sender and preview', t => {
 	unmount();
 });
 
-test('notification toast truncates long previews', t => {
-	const longPreview = 'x'.repeat(200);
+test('notification toast stacks multiple messages with a count', t => {
 	const {lastFrame, unmount} = render(
-		<NotificationToast from="Someone" preview={longPreview} />,
+		<NotificationToast
+			alerts={[
+				{from: 'Bestie', preview: 'hey'},
+				{from: 'Bestie', preview: 'you there?'},
+				{from: 'jamntrl', preview: 'yo'},
+			]}
+		/>,
 	);
 	const output = lastFrame() ?? '';
 
-	t.true(output.includes('…'), 'Should truncate with an ellipsis');
+	t.true(output.includes('New messages (3)'), 'Should show the count');
+	t.true(output.includes('you there?'), 'Should show the latest line');
+	t.true(output.includes('jamntrl'), 'Should show all senders');
+	unmount();
+});
+
+test('notification toast truncates long previews', t => {
+	const {lastFrame, unmount} = render(
+		<NotificationToast alerts={[{from: 'X', preview: 'x'.repeat(200)}]} />,
+	);
+	t.true((lastFrame() ?? '').includes('…'), 'Should truncate with an ellipsis');
 	unmount();
 });
