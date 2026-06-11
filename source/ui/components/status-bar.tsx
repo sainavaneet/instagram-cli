@@ -2,6 +2,7 @@ import React from 'react';
 import {Box, Text} from 'ink';
 import type {Thread} from '../../types/instagram.js';
 import type {RealtimeStatus} from '../../client.js';
+import {threadDisplayName} from '../../utils/aliases.js';
 
 type StatusBarProperties = {
 	readonly isLoading: boolean;
@@ -73,7 +74,7 @@ export default function StatusBar({
 				{getSearchModeIndicator()}
 				{getSeenModeIndicator()}
 				{currentView === 'chat' && currentThread && (
-					<Text> / Chat with {currentThread.title}</Text>
+					<Text> / Chat with {threadDisplayName(currentThread)}</Text>
 				)}
 			</Box>
 

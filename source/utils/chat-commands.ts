@@ -5,6 +5,7 @@ import type {InstagramClient} from '../client.js';
 import type {ChatState, Post} from '../types/instagram.js';
 import type {ScrollViewRef} from '../ui/components/scroll-view.js';
 import {ConfigManager} from '../config.js';
+import {removeAlias, setAlias} from './aliases.js';
 import {getOpenableUrl} from './links.js';
 import {preprocessMessage} from './preprocess.js';
 import {createContextualLogger} from './logger.js';
@@ -69,6 +70,33 @@ export const chatCommands: Record<string, ChatCommand> = {
 
 			await open(url);
 			return `🌐 Opening in browser: ${url}`;
+		},
+	},
+	nick: {
+		description:
+			'Set a custom name for the current chat. Usage: :nick <name> (empty clears it)',
+		async handler(arguments_, {chatState}) {
+			const thread = chatState.currentThread;
+			if (!thread) {
+				return 'Open a chat first, then use :nick <name>';
+			}
+
+			const me = ConfigManager.getInstance().get('login.currentUsername', '');
+			const recipient =
+				thread.users.find(u => u.username && u.username !== me) ??
+				thread.users[0];
+			if (!recipient?.username) {
+				return 'Could not determine who to rename.';
+			}
+
+			const name = arguments_.join(' ').trim();
+			if (!name) {
+				await removeAlias(recipient.username);
+				return `Removed custom name for @${recipient.username}`;
+			}
+
+			await setAlias(recipient.username, name);
+			return `Renamed @${recipient.username} → "${name}"`;
 		},
 	},
 	ghost: {

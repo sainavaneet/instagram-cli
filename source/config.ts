@@ -40,6 +40,8 @@ type Config = {
 	privacy: PrivacyConfig;
 	image: ImageConfig;
 	advanced: AdvancedConfig;
+	// Custom display names keyed by Instagram username.
+	aliases: Record<string, string>;
 };
 
 const DEFAULT_DATA_DIR = path.join(os.homedir(), '.instagram-cli');
@@ -59,6 +61,7 @@ const DEFAULT_CONFIG: Config = {
 	privacy: {
 		invisibleMode: false,
 	},
+	aliases: {},
 	advanced: {
 		debugMode: false,
 		dataDir: DEFAULT_DATA_DIR,
@@ -171,6 +174,7 @@ export class ConfigManager {
 			chat: {...defaultConfig.chat, ...loadedConfig.chat},
 			privacy: {...defaultConfig.privacy, ...loadedConfig.privacy},
 			image: {...defaultConfig.image, ...loadedConfig.image},
+			aliases: {...defaultConfig.aliases, ...loadedConfig.aliases},
 			advanced: {...defaultConfig.advanced, ...loadedConfig.advanced},
 		};
 	}

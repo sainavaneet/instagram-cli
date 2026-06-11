@@ -75,10 +75,23 @@ in `source/types/instagram.ts`, rendering in `source/ui/components/message-list.
 URL helpers in `source/utils/links.ts`, the `:open` command in
 `source/utils/chat-commands.ts`, and the `o` key in `source/ui/views/chat-view.tsx`.
 
+## 6. Delivery ticks + custom names
+
+- **WhatsApp-style ticks** next to the time on outgoing messages: `✓` sent,
+  `✓✓` delivered, `✓✓` **green** once the recipient has seen the chat (driven
+  by the realtime `threadSeen` signal). Incoming messages show no ticks.
+  (`deliveryStatus` on messages, `recipientHasSeen` prop on `MessageList`.)
+- **Custom names (aliases)** per person, stored in config (`aliases` map keyed
+  by username) and shown in the thread list, the chat title, and message
+  sender labels. Set one while in a chat with **`:nick <name>`** (empty name
+  clears it). Code in `source/utils/aliases.ts`, wired into `thread-item.tsx`,
+  `message-list.tsx`, `status-bar.tsx`, and the `:nick` command in
+  `chat-commands.ts`.
+
 ## Tests
 
-- `tests/message-list-layout.test.tsx` — single-line layout, `me` label, `HH:MM`, xma row.
-- `tests/chat-commands.test.ts` — `:ghost` toggle persists to config.
+- `tests/message-list-layout.test.tsx` — single-line layout, `me` label, `HH:MM`, xma row, delivery ticks.
+- `tests/chat-commands.test.ts` — `:ghost` toggle and `:nick` alias persist to config.
 - `tests/message-parser.test.ts` — `xma_clip` parses into an openable `xma` message.
 - `tests/links.test.ts` — OSC 8 hyperlink + `getOpenableUrl`.
 - `tests/thread-item.test.tsx` — unread `NEW` badge.

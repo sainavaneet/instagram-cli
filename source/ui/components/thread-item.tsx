@@ -1,6 +1,7 @@
 import React from 'react';
 import {Box, Text} from 'ink';
 import type {Message, Thread} from '../../types/instagram.js';
+import {threadDisplayName} from '../../utils/aliases.js';
 
 type ThreadItemProperties = {
 	readonly thread: Thread;
@@ -88,7 +89,7 @@ export default function ThreadItem({thread, isSelected}: ThreadItemProperties) {
 						}
 						wrap="truncate"
 					>
-						{thread.title}
+						{threadDisplayName(thread)}
 					</Text>
 				</Box>
 				<Box>

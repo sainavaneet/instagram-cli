@@ -6,6 +6,7 @@ import {useImageProtocol} from '../hooks/use-image-protocol.js';
 import {truncateText} from '../../utils/text-utils.js';
 import {ConfigManager} from '../../config.js';
 import {hyperlink} from '../../utils/links.js';
+import {applyAlias} from '../../utils/aliases.js';
 
 type MessageListProperties = {
 	readonly messages: Message[];
@@ -181,7 +182,9 @@ export default function MessageList({
 						}
 					}
 
-					const label = message.isOutgoing ? 'me' : message.username;
+					const label = message.isOutgoing
+						? 'me'
+						: applyAlias(message.username);
 					const labelColor = message.isOutgoing ? 'cyan' : 'greenBright';
 					const useSingleLine =
 						oneLine && message.itemType === 'text' && !message.repliedTo;

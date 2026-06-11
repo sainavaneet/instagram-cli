@@ -10,6 +10,7 @@ import {
 } from '../source/utils/chat-commands.js';
 import {mockClient} from '../source/mocks/mock-client.js';
 import {ConfigManager} from '../source/config.js';
+import {applyAlias} from '../source/utils/aliases.js';
 import type {ChatState} from '../source/types/instagram.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -101,7 +102,8 @@ test(':upload without active thread returns undefined', async t => {
 
 const ghostHandler = chatCommands['ghost']!.handler;
 
-test(':ghost toggles silent read and persists to config', async t => {
+// Serial: these mutate the shared ConfigManager singleton + config file.
+test.serial(':ghost toggles silent read and persists to config', async t => {
 	// Back up the real config file so this test never permanently changes it.
 	const configPath = path.join(
 		os.homedir(),
@@ -155,3 +157,64 @@ test(':ghost toggles silent read and persists to config', async t => {
 		}
 	}
 });
+
+// ── :nick command (custom names) ──────────────────────────────────────────────
+
+const nickHandler = chatCommands['nick']!.handler;
+
+test.serial(
+	':nick sets and clears a custom name for the current chat',
+	async t => {
+		const configPath = path.join(
+			os.homedir(),
+			'.instagram-cli',
+			'config.ts.yaml',
+		);
+		const backup = fs.existsSync(configPath)
+			? fs.readFileSync(configPath, 'utf8')
+			: undefined;
+
+		await ConfigManager.getInstance().initialize();
+
+		const thread = {
+			...mockThread,
+			users: [
+				{pk: '9', username: 'oakberrybowl', fullName: 'Oak', isVerified: false},
+			],
+		};
+
+		try {
+			const setResult = await nickHandler(
+				['Bestie'],
+				makeContext({currentThread: thread}),
+			);
+			t.true(
+				typeof setResult === 'string' && setResult.includes('Bestie'),
+				'Should confirm the new name',
+			);
+			t.is(applyAlias('oakberrybowl'), 'Bestie', 'Alias should be applied');
+
+			const clearResult = await nickHandler(
+				[],
+				makeContext({currentThread: thread}),
+			);
+			t.true(
+				typeof clearResult === 'string' && clearResult.includes('Removed'),
+				'Should confirm removal',
+			);
+			t.is(
+				applyAlias('oakberrybowl'),
+				'oakberrybowl',
+				'Alias should be cleared',
+			);
+		} finally {
+			if (backup === undefined) {
+				if (fs.existsSync(configPath)) {
+					fs.unlinkSync(configPath);
+				}
+			} else {
+				fs.writeFileSync(configPath, backup, 'utf8');
+			}
+		}
+	},
+);
