@@ -16,6 +16,7 @@ import MessageList from '../components/message-list.js';
 import InputBox from '../components/input-box.js';
 import StatusBar from '../components/status-bar.js';
 import NotificationToast from '../components/notification-toast.js';
+import SendStatus, {type SendState} from '../components/send-status.js';
 import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
 import {useClient} from '../context/client-context.js';
@@ -126,6 +127,7 @@ export default function ChatView({
 	const [newMessageAlert, setNewMessageAlert] = useState<
 		{from: string; preview: string; threadId: string} | undefined
 	>(undefined);
+	const [sendStatus, setSendStatus] = useState<SendState>('idle');
 
 	const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
 	const [searchQuery, setSearchQuery] = useState(initialSearchQuery ?? '');
@@ -191,6 +193,20 @@ export default function ChatView({
 			process.off('SIGHUP', onSignal);
 		};
 	}, []);
+
+	// Clear the "✓ sent" indicator a moment after a successful send.
+	useEffect(() => {
+		if (sendStatus === 'sent') {
+			const timer = setTimeout(() => {
+				setSendStatus('idle');
+			}, 1800);
+			return () => {
+				clearTimeout(timer);
+			};
+		}
+
+		return;
+	}, [sendStatus]);
 
 	// Helper to exit search mode
 	const exitSearchMode = useCallback(() => {
@@ -831,7 +847,9 @@ export default function ChatView({
 
 			if (finalText) {
 				const threadId = chatState.currentThread.id;
+				setSendStatus('sending');
 				const itemId = await client.sendMessage(threadId, finalText);
+				setSendStatus('sent');
 
 				// Optimistically show the sent message immediately. Without this it
 				// only appears if realtime MQTT echoes it back — which is unreliable
@@ -880,6 +898,7 @@ export default function ChatView({
 				};
 			}
 		} catch (error) {
+			setSendStatus('idle');
 			const errorMessage =
 				error instanceof Error ? error.message : 'Failed to send message';
 			setSystemMessage(errorMessage);
@@ -1025,6 +1044,11 @@ export default function ChatView({
 					{systemMessage && (
 						<Box marginTop={1}>
 							<Text color="yellow">{systemMessage}</Text>
+						</Box>
+					)}
+					{sendStatus !== 'idle' && (
+						<Box paddingX={1}>
+							<SendStatus status={sendStatus} />
 						</Box>
 					)}
 					<InputBox
