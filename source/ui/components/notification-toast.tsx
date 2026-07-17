@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Text} from 'ink';
+import {border, glyphs, palette} from '../theme/index.js';
 
 export type Alert = {
 	from: string;
@@ -10,15 +11,13 @@ type NotificationToastProperties = {
 	readonly alerts: readonly Alert[];
 };
 
-// Colors cycle to make the banner pulse and grab attention.
+// A mono pulse: dim accent → accent → bright, then settle on the accent. Keeps
+// the "lively" attention-grab without the old five-hue rainbow.
 const PULSE_COLORS = [
-	'magenta',
-	'magentaBright',
-	'cyan',
-	'cyanBright',
-	'yellow',
+	palette.accentDim,
+	palette.accent,
+	palette.fgBright,
 ] as const;
-const ICONS = ['🔔', '📩', '💬', '📨'] as const;
 const FRAME_MS = 180;
 const MAX_PREVIEW = 44;
 // Pulse for a few seconds to grab attention, then settle into a steady banner
@@ -59,26 +58,23 @@ export default function NotificationToast({
 
 	const settled = frame >= PULSE_FRAMES;
 	const color = settled
-		? 'magentaBright'
-		: (PULSE_COLORS[frame % PULSE_COLORS.length] ?? 'magenta');
-	const icon = settled ? '📨' : (ICONS[frame % ICONS.length] ?? '🔔');
+		? palette.accent
+		: (PULSE_COLORS[frame % PULSE_COLORS.length] ?? palette.accent);
 	const count = alerts.length;
-	const heading =
-		count > 1 ? `${icon} New messages (${count})` : `${icon} New message`;
+	const heading = count > 1 ? `New messages (${count})` : 'New message';
 
 	return (
 		<Box
 			flexDirection="column"
-			borderStyle="round"
-			borderColor={color}
-			paddingX={1}
+			{...border.accentLeft}
+			paddingLeft={1}
 			marginX={1}
 		>
 			<Box justifyContent="space-between">
 				<Text bold color={color}>
-					{heading}
+					{glyphs.dotActive} {heading}
 				</Text>
-				<Text color={color}>● unread</Text>
+				<Text color={color}>unread</Text>
 			</Box>
 			{alerts.map((alert, index) => (
 				<Text key={index} dimColor>

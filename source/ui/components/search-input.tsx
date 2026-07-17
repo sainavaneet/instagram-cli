@@ -1,5 +1,6 @@
 import React from 'react';
 import {Box, Text, useInput} from 'ink';
+import {accent, Divider, Hint} from '../theme/index.js';
 import TextInput from './text-input.js';
 
 type SearchMode = 'username' | 'title';
@@ -44,11 +45,10 @@ export default function SearchInput({
 	};
 
 	return (
-		<Box borderStyle="round" flexDirection="column" paddingX={1}>
-			<Box>
-				<Text bold color="cyan">
-					{prefix}
-				</Text>
+		<Box flexDirection="column" paddingX={1}>
+			<Divider />
+			<Box paddingTop={1}>
+				<Text {...accent.bold}>{prefix} </Text>
 				<TextInput
 					showCursor
 					placeholder={placeholder}
@@ -56,17 +56,12 @@ export default function SearchInput({
 					onChange={onChange}
 					onSubmit={handleSubmit}
 				/>
-				{isSearching && (
-					<Text dimColor color="yellow">
-						{' '}
-						Searching...
-					</Text>
-				)}
+				{isSearching && <Hint> Searching...</Hint>}
 				{!isSearching && value.length > 0 && (
-					<Text dimColor>
+					<Hint>
 						{' '}
 						({resultCount} result{resultCount === 1 ? '' : 's'})
-					</Text>
+					</Hint>
 				)}
 			</Box>
 		</Box>

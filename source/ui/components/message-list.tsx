@@ -7,6 +7,7 @@ import {truncateText} from '../../utils/text-utils.js';
 import {ConfigManager} from '../../config.js';
 import {hyperlink} from '../../utils/links.js';
 import {applyAlias} from '../../utils/aliases.js';
+import {accent, border, glyphs, palette, state} from '../theme/index.js';
 
 type MessageListProperties = {
 	readonly messages: Message[];
@@ -46,14 +47,14 @@ export default function MessageList({
 		}
 
 		if (recipientHasSeen) {
-			return <Text color="green">✓✓ </Text>;
+			return <Text {...state.success}>{glyphs.checkDouble} </Text>;
 		}
 
 		if (message.deliveryStatus === 'sent') {
-			return <Text dimColor>✓ </Text>;
+			return <Text dimColor>{glyphs.check} </Text>;
 		}
 
-		return <Text dimColor>✓✓ </Text>;
+		return <Text dimColor>{glyphs.checkDouble} </Text>;
 	};
 
 	const mediaShareIndexMap = useMemo(() => {
@@ -81,7 +82,7 @@ export default function MessageList({
 				if (media.media_type === 2) {
 					return (
 						<Box flexDirection="column">
-							<Text dimColor>📹 Sent a video</Text>
+							<Text dimColor>{glyphs.video} Sent a video</Text>
 							<Text dimColor>:open (or select + press o) to watch</Text>
 						</Box>
 					);
@@ -93,8 +94,8 @@ export default function MessageList({
 					return (
 						<Box flexDirection="column">
 							<Box
-								borderStyle="round"
-								borderColor="cyan"
+								borderDimColor
+								borderStyle="single"
 								width={32}
 								height={17}
 								flexDirection="column"
@@ -123,17 +124,10 @@ export default function MessageList({
 					<Box flexDirection="column">
 						<Text dimColor>
 							[Shared post by{' '}
-							<Text bold color="cyan">
-								@{post.user.username}
-							</Text>
-							]
+							<Text {...accent.bold}>@{post.user.username}</Text>]
 						</Text>
 						<Text dimColor>
-							Use{' '}
-							<Text bold color="yellow">
-								:view {index}
-							</Text>{' '}
-							to view this post
+							Use <Text {...accent.bold}>:view {index}</Text> to view this post
 						</Text>
 					</Box>
 				);
@@ -143,7 +137,7 @@ export default function MessageList({
 				return (
 					<Text>
 						{message.link.text}
-						<Text color="gray"> ({message.link.url})</Text>
+						<Text dimColor> ({message.link.url})</Text>
 					</Text>
 				);
 			}
@@ -151,11 +145,13 @@ export default function MessageList({
 			case 'xma': {
 				const {xma} = message;
 				const label = xma.author
-					? `🎬 Reel by @${xma.author}`
-					: `🎬 Shared ${xma.kind}`;
+					? `${glyphs.video} Reel by @${xma.author}`
+					: `${glyphs.video} Shared ${xma.kind}`;
 				return (
 					<Box flexDirection="column">
-						<Text color="magenta">{hyperlink(`${label} ↗`, xma.url)}</Text>
+						<Text {...accent.solid}>
+							{hyperlink(`${label} ${glyphs.link}`, xma.url)}
+						</Text>
 						<Text dimColor>
 							:open (or select + press o) to watch in browser
 						</Text>
@@ -198,7 +194,9 @@ export default function MessageList({
 					const label = message.isOutgoing
 						? 'me'
 						: applyAlias(message.username);
-					const labelColor = message.isOutgoing ? 'cyan' : 'greenBright';
+					const labelProps = message.isOutgoing
+						? accent.bold
+						: {color: palette.fgBright, bold: true};
 					const useSingleLine =
 						oneLine && message.itemType === 'text' && !message.repliedTo;
 
@@ -213,64 +211,73 @@ export default function MessageList({
 							</Box>
 						) : null;
 
+					// Your messages sit on the right with an accent bar; your friend's
+					// sit on the left with a neutral bar — so the two are never confused.
+					const ownerBorder = message.isOutgoing
+						? border.accentLeft
+						: border.left;
+					const selectionCaret = isSelected ? (
+						<Text {...accent.bold}>{glyphs.caret} </Text>
+					) : null;
+
 					return (
 						<Box
 							key={message.id}
-							flexDirection="column"
+							width="100%"
 							flexShrink={0}
 							marginBottom={1}
-							borderStyle={isSelected ? 'round' : undefined}
-							borderColor={isSelected ? 'yellow' : undefined}
-							paddingX={isSelected ? 1 : 0}
+							justifyContent={message.isOutgoing ? 'flex-end' : 'flex-start'}
 						>
-							{useSingleLine ? (
-								<Box justifyContent="space-between">
-									<Box flexShrink={1}>
-										<Text bold color={labelColor}>
-											{label}:{' '}
-										</Text>
-										<Text>{message.text}</Text>
-									</Box>
+							<Box
+								flexDirection="column"
+								flexShrink={1}
+								{...ownerBorder}
+								paddingX={1}
+							>
+								{useSingleLine ? (
 									<Box>
+										{selectionCaret}
+										<Text {...labelProps}>{label}: </Text>
+										<Text>{message.text}</Text>
+										<Text dimColor>{'  '}</Text>
 										{renderTicks(message)}
 										<Text dimColor>{formatTime(message.timestamp)}</Text>
 									</Box>
-								</Box>
-							) : (
-								<>
-									<Box justifyContent="space-between">
-										<Text bold color={labelColor}>
-											{label}
-										</Text>
+								) : (
+									<>
 										<Box>
+											{selectionCaret}
+											<Text {...labelProps}>{label}</Text>
+											<Text dimColor>{'  '}</Text>
 											{renderTicks(message)}
 											<Text dimColor>{formatTime(message.timestamp)}</Text>
 										</Box>
-									</Box>
-									<Box flexDirection="column">
-										{message.repliedTo && (
-											<Box
-												flexDirection="column"
-												borderLeftColor="gray"
-												paddingLeft={1}
-												marginBottom={1}
-											>
-												<Text dimColor>
-													Replying to{' '}
-													<Text bold>{message.repliedTo.username}</Text>
-												</Text>
-												<Text dimColor>
-													{message.repliedTo.itemType === 'text'
-														? `"${truncateText(message.repliedTo.text ?? '', 40)}"`
-														: `[A ${message.repliedTo.itemType}]`}
-												</Text>
-											</Box>
-										)}
-										{renderMessageContent(message)}
-									</Box>
-								</>
-							)}
-							{reactionsNode}
+										<Box flexDirection="column">
+											{message.repliedTo && (
+												<Box
+													flexDirection="column"
+													{...border.left}
+													paddingLeft={1}
+													marginTop={1}
+													marginBottom={1}
+												>
+													<Text dimColor>
+														Replying to{' '}
+														<Text bold>{message.repliedTo.username}</Text>
+													</Text>
+													<Text dimColor>
+														{message.repliedTo.itemType === 'text'
+															? `"${truncateText(message.repliedTo.text ?? '', 40)}"`
+															: `[A ${message.repliedTo.itemType}]`}
+													</Text>
+												</Box>
+											)}
+											{renderMessageContent(message)}
+										</Box>
+									</>
+								)}
+								{reactionsNode}
+							</Box>
 						</Box>
 					);
 				})}

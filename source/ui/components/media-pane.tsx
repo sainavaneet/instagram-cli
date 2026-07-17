@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {Box, Text, useStdout} from 'ink';
 import Image, {type ImageProtocolName} from 'ink-picture';
+import {glyphs, Hint, state} from '../theme/index.js';
 
 type Properties = {
 	readonly imageUrl?: string;
@@ -50,27 +51,27 @@ export default function MediaPane({
 			width="50%"
 		>
 			{isLoading ? (
-				<Text color="yellow">⏳ Loading media...</Text>
+				<Hint>Loading media…</Hint>
 			) : imageUrl && dynamicImageSize ? (
 				<Box
-					borderStyle="round"
-					borderColor="cyan"
+					borderDimColor
+					borderStyle="single"
 					width={dynamicImageSize.width}
 					height={dynamicImageSize.height}
 				>
 					<Image src={imageUrl} alt={altText} protocol={protocol} />
 				</Box>
 			) : mediaType === 2 ? (
-				<Text color="yellow">▶ Video (no preview)</Text>
+				<Text {...state.warning}>{glyphs.video} Video (no preview)</Text>
 			) : (
-				<Text color="red">No media available</Text>
+				<Text {...state.error}>No media available</Text>
 			)}
 
-			<Text>{mediaType === 2 ? '▶ Video' : ''}</Text>
+			<Text>{mediaType === 2 ? `${glyphs.video} Video` : ''}</Text>
 			{carouselCount && carouselCount > 1 ? (
-				<Text color="gray">
+				<Hint>
 					Carousel {(carouselIndex ?? 0) + 1} of {carouselCount}
-				</Text>
+				</Hint>
 			) : null}
 		</Box>
 	);

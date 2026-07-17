@@ -20,6 +20,7 @@ import SendStatus, {type SendState} from '../components/send-status.js';
 import TypingIndicator from '../components/typing-indicator.js';
 import ThreadList from '../components/thread-list.js';
 import ScrollView, {type ScrollViewRef} from '../components/scroll-view.js';
+import {Hint, state} from '../theme/index.js';
 import {useClient} from '../context/client-context.js';
 import {ConfigManager} from '../../config.js';
 import {getOpenableUrl} from '../../utils/links.js';
@@ -146,12 +147,12 @@ export default function ChatView({
 	const imageProtocol = useImageProtocol();
 
 	// Calculate available height for messages (total height minus status bar and
-	// input area). The notification toast is a 3-row box, so when it's shown we
-	// shrink the message area by that much to avoid overflowing the input/help.
-	// The toast box grows with each stacked message (2 borders + header + N lines).
+	// input area). The notification toast has only a left accent rule (no top or
+	// bottom border), so it occupies its header row plus one line per alert.
 	const toastRows =
-		newMessageAlerts.length > 0 ? newMessageAlerts.length + 3 : 0;
-	const messageAreaHeight = Math.max(1, height - 8 - toastRows);
+		newMessageAlerts.length > 0 ? newMessageAlerts.length + 1 : 0;
+	// Budget: status bar (1) + input divider + input line (2) + help (1) + spacing.
+	const messageAreaHeight = Math.max(1, height - 7 - toastRows);
 
 	// Handler for viewing media share posts
 	const handleViewMediaShare = useCallback((post: Post) => {
@@ -1047,7 +1048,7 @@ export default function ChatView({
 					alignItems="center"
 					paddingY={1}
 				>
-					<Text>Loading...</Text>
+					<Hint>Loading…</Hint>
 				</Box>
 			);
 		}
@@ -1092,7 +1093,7 @@ export default function ChatView({
 						alignItems="center"
 						paddingY={1}
 					>
-						<Text>Loading messages...</Text>
+						<Hint>Loading messages…</Hint>
 					</Box>
 				) : (
 					<ScrollView
@@ -1129,7 +1130,7 @@ export default function ChatView({
 						)}
 					{systemMessage && (
 						<Box marginTop={1}>
-							<Text color="yellow">{systemMessage}</Text>
+							<Text {...state.info}>{systemMessage}</Text>
 						</Box>
 					)}
 					{sendStatus !== 'idle' && (
@@ -1197,13 +1198,13 @@ export default function ChatView({
 						{renderContent()}
 					</Box>
 
-					<Box>
+					<Box paddingX={1}>
 						{currentView === 'threads' && chatState.loadingMoreThreads ? (
-							<Text color="yellow">Loading more threads...</Text>
+							<Hint>Loading more threads…</Hint>
 						) : systemMessage ? (
-							<Text color="yellow">{systemMessage}</Text>
+							<Text {...state.info}>{systemMessage}</Text>
 						) : (
-							<Text dimColor>{getHelpText()}</Text>
+							<Hint>{getHelpText()}</Hint>
 						)}
 					</Box>
 				</Box>

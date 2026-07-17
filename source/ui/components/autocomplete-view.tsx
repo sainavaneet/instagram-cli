@@ -1,5 +1,6 @@
 import React from 'react';
 import {Box, Text} from 'ink';
+import {accent, glyphs, text} from '../theme/index.js';
 
 type AutocompleteViewProps = {
 	readonly suggestions: readonly string[];
@@ -38,13 +39,8 @@ export function AutocompleteView({
 				const actualIndex = startIndex + index;
 				const isSelected = actualIndex === selectedIndex;
 				return (
-					<Text
-						key={suggestion}
-						color={isSelected ? 'magenta' : 'gray'}
-						bold={isSelected}
-						dimColor={!isSelected}
-					>
-						{isSelected ? '❯ ' : '  '}
+					<Text key={suggestion} {...(isSelected ? accent.bold : text.muted)}>
+						{isSelected ? `${glyphs.caret} ` : '  '}
 						{suggestion}
 					</Text>
 				);

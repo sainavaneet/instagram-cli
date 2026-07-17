@@ -13,6 +13,7 @@ import {
 } from '../../types/instagram.js';
 import {createContextualLogger} from '../../utils/logger.js';
 import {type InstagramClient} from '../../client.js';
+import {accent, glyphs, Hint, state} from '../theme/index.js';
 import SplitView from './split-view.js';
 import MediaPane from './media-pane.js';
 import TextInput from './text-input.js';
@@ -236,10 +237,10 @@ export default function ListDetailDisplay<
 			{combinedItems.map((item, index) => (
 				<Box key={item.pk} height={1} flexShrink={0}>
 					<Text
-						color={index === selectedIndex ? 'blue' : undefined}
+						{...(index === selectedIndex ? accent.bold : {})}
 						wrap="truncate-end"
 					>
-						{index === selectedIndex ? '➜ ' : '   '}
+						{index === selectedIndex ? `${glyphs.caret} ` : '  '}
 						{item.label}
 					</Text>
 				</Box>
@@ -261,20 +262,18 @@ export default function ListDetailDisplay<
 				</Box>
 			) : mode === 'story' ? (
 				<Box marginBottom={1}>
-					<Text dimColor>
-						Press &apos;s&apos; to search for a user&apos;s stories
-					</Text>
+					<Hint>Press &apos;s&apos; to search for a user&apos;s stories</Hint>
 				</Box>
 			) : null}
 			{searchError && (
 				<Box marginBottom={1}>
-					<Text color="red">{searchError}</Text>
+					<Text {...state.error}>{searchError}</Text>
 				</Box>
 			)}
 
 			{combinedItems.length === 0 ? (
 				<Box flexGrow={1} justifyContent="center" alignItems="center">
-					<Text>⏳ Loading {mode === 'story' ? 'stories' : 'posts'}...</Text>
+					<Hint>Loading {mode === 'story' ? 'stories' : 'posts'}…</Hint>
 				</Box>
 			) : (
 				<Box flexDirection="row" flexGrow={1} gap={1}>
@@ -301,14 +300,14 @@ export default function ListDetailDisplay<
 						justifyContent="flex-start"
 					>
 						<Box flexDirection="column" gap={1} marginBottom={1}>
-							<Text color="green">👤 {currentItem?.label ?? 'Unknown'}</Text>
+							<Text {...accent.solid}>{currentItem?.label ?? 'Unknown'}</Text>
 
 							{currentContentItem && 'taken_at' in currentContentItem && (
-								<Text color="gray">
+								<Hint>
 									{new Date(
 										(currentContentItem as Story).taken_at * 1000,
 									).toLocaleString()}
-								</Text>
+								</Hint>
 							)}
 
 							{/* Story-specific: mentions */}
@@ -327,7 +326,7 @@ export default function ListDetailDisplay<
 										<>
 											<Text bold>Mentions:</Text>
 											{mentions.map((mention, index) => (
-												<Text key={index} color="blue">
+												<Text key={index} {...accent.dim}>
 													@{mention.user.username} ({mention.user.full_name})
 												</Text>
 											))}
@@ -363,7 +362,7 @@ export default function ListDetailDisplay<
 
 	return (
 		<SplitView
-			sidebarTitle={mode === 'story' ? '✨ Stories' : '📜 Feed'}
+			sidebarTitle={mode === 'story' ? 'Stories' : 'Feed'}
 			sidebarContent={sidebarContent}
 			mainContent={mainContent}
 			footerText={

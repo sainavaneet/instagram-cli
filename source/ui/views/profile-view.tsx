@@ -2,6 +2,7 @@ import React from 'react';
 import {Box, Text} from 'ink';
 import Image from 'ink-picture';
 import type {ProfileInfo} from '../../types/instagram.js';
+import {accent, Divider, glyphs, state} from '../theme/index.js';
 
 type Props = {
 	readonly profile: ProfileInfo;
@@ -16,18 +17,16 @@ function formatCount(n: number): string {
 }
 
 export default function ProfileView({profile, imageProtocol}: Props) {
-	const separator = '─'.repeat(40);
-
 	return (
 		<Box flexDirection="row" padding={1} gap={2}>
 			{/* Left: profile picture */}
 			{profile.profilePicUrl && imageProtocol ? (
 				<Box
+					borderDimColor
 					width={24}
 					height={12}
 					flexShrink={0}
-					borderStyle="round"
-					borderColor="magenta"
+					borderStyle="single"
 				>
 					<Image
 						src={profile.profilePicUrl}
@@ -38,11 +37,11 @@ export default function ProfileView({profile, imageProtocol}: Props) {
 				</Box>
 			) : (
 				<Box
+					borderDimColor
 					width={24}
 					height={12}
 					flexShrink={0}
-					borderStyle="round"
-					borderColor="magenta"
+					borderStyle="single"
 					alignItems="center"
 					justifyContent="center"
 				>
@@ -53,16 +52,14 @@ export default function ProfileView({profile, imageProtocol}: Props) {
 			{/* Right: profile info */}
 			<Box flexDirection="column" flexGrow={1}>
 				<Box gap={1}>
-					<Text bold color="cyan">
-						@{profile.username}
-					</Text>
-					{profile.isVerified && <Text color="blue">✓</Text>}
-					{profile.isPrivate && <Text dimColor>🔒</Text>}
+					<Text {...accent.bold}>@{profile.username}</Text>
+					{profile.isVerified && <Text {...accent.solid}>{glyphs.check}</Text>}
+					{profile.isPrivate && <Text dimColor>{glyphs.lock}</Text>}
 				</Box>
 
 				{profile.fullName.length > 0 && <Text>{profile.fullName}</Text>}
 
-				<Text dimColor>{separator}</Text>
+				<Divider width={40} />
 
 				<Box gap={3} marginTop={1}>
 					<Box flexDirection="column" alignItems="center">
@@ -81,14 +78,14 @@ export default function ProfileView({profile, imageProtocol}: Props) {
 
 				{profile.biography.length > 0 && (
 					<Box marginTop={1} flexDirection="column">
-						<Text dimColor>{separator}</Text>
+						<Divider width={40} />
 						<Text wrap="wrap">{profile.biography}</Text>
 					</Box>
 				)}
 
 				{profile.externalUrl && (
 					<Box marginTop={1}>
-						<Text color="blue">{profile.externalUrl}</Text>
+						<Text {...state.info}>{profile.externalUrl}</Text>
 					</Box>
 				)}
 			</Box>

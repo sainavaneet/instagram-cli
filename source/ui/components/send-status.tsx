@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Text} from 'ink';
+import {glyphs, state, text} from '../theme/index.js';
 
 export type SendState = 'idle' | 'sending' | 'sent';
 
@@ -30,13 +31,13 @@ export default function SendStatus({status}: SendStatusProperties) {
 
 	if (status === 'sending') {
 		const glyph = FRAMES[frame % FRAMES.length] ?? '✶';
-		return <Text dimColor>{glyph} sending…</Text>;
+		return <Text {...text.muted}>{glyph} sending…</Text>;
 	}
 
 	if (status === 'sent') {
 		return (
-			<Text dimColor color="green">
-				✓ sent
+			<Text {...state.success} dimColor>
+				{glyphs.check} sent
 			</Text>
 		);
 	}

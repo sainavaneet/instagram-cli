@@ -2,6 +2,7 @@ import React from 'react';
 import {Box, Text} from 'ink';
 import type {Message, Thread} from '../../types/instagram.js';
 import {threadDisplayName} from '../../utils/aliases.js';
+import {accent, Caret, glyphs, Hint, StatusDot, text} from '../theme/index.js';
 
 type ThreadItemProperties = {
 	readonly thread: Thread;
@@ -9,6 +10,9 @@ type ThreadItemProperties = {
 	readonly isTyping?: boolean;
 };
 
+// Each item is exactly two lines tall regardless of state — selection is shown
+// with an accent caret, not a border. thread-list.tsx depends on this fixed
+// height (itemHeight) for viewport paging and mouse hit-testing.
 export default function ThreadItem({
 	thread,
 	isSelected,
@@ -39,17 +43,17 @@ export default function ThreadItem({
 			}
 
 			case 'media': {
-				return '[Media]';
+				return `${glyphs.media} Media`;
 			}
 
 			case 'media_share': {
-				return `[Shared post by @${message.mediaSharePost.user.username}]`;
+				return `${glyphs.media} Shared post by @${message.mediaSharePost.user.username}`;
 			}
 
 			case 'xma': {
 				return message.xma.author
-					? `🎬 Reel by @${message.xma.author}`
-					: `🎬 Shared ${message.xma.kind}`;
+					? `${glyphs.video} Reel by @${message.xma.author}`
+					: `${glyphs.video} Shared ${message.xma.kind}`;
 			}
 
 			case 'link': {
@@ -70,61 +74,44 @@ export default function ThreadItem({
 		? getLastMessageText(thread.lastMessage)
 		: '';
 
+	const usernameProps = isSelected
+		? accent.bold
+		: thread.unread
+			? text.bold
+			: text.primary;
+
 	return (
-		<Box
-			paddingX={1}
-			paddingY={0}
-			width="100%"
-			flexDirection="column"
-			borderStyle={isSelected ? 'round' : undefined}
-			borderColor={isSelected ? 'cyan' : undefined}
-		>
-			{/* Top Row: Title, Unread, Time */}
+		<Box paddingX={1} width="100%" flexDirection="column">
+			{/* Top row: caret + name on the left, time + unread dot on the right */}
 			<Box justifyContent="space-between">
 				<Box flexShrink={1} marginRight={2}>
-					{thread.unread && !isSelected && (
-						<Text bold color="greenBright">
-							●{' '}
-						</Text>
-					)}
-					<Text
-						bold={isSelected || thread.unread}
-						color={
-							isSelected ? 'cyan' : thread.unread ? 'whiteBright' : undefined
-						}
-						wrap="truncate"
-					>
+					<Caret isActive={isSelected} />
+					<Text {...usernameProps} wrap="truncate">
 						{threadDisplayName(thread)}
 					</Text>
 				</Box>
 				<Box>
+					<Hint>{formatTime(thread.lastActivity)}</Hint>
 					{thread.unread && (
-						<Text bold color="greenBright">
-							NEW{' '}
+						<Text>
+							{' '}
+							<StatusDot tone="accent" />
 						</Text>
 					)}
-					<Text dimColor>{formatTime(thread.lastActivity)}</Text>
 				</Box>
 			</Box>
 
-			{/* Bottom Row: Last message, or a typing indicator */}
+			{/* Bottom row: typing indicator or last-message preview (aligned under name) */}
 			{isTyping ? (
-				<Box>
-					<Text italic color="cyan">
-						✏️ typing…
-					</Text>
-				</Box>
+				<Text {...accent.dim} italic>
+					{'  '}typing···
+				</Text>
 			) : (
 				lastMessageText && (
-					<Box>
-						<Text
-							bold={thread.unread}
-							dimColor={!thread.unread}
-							wrap="truncate"
-						>
-							{lastMessageText.replaceAll(/[\n\r]+/g, ' ')}
-						</Text>
-					</Box>
+					<Text {...(thread.unread ? text.bold : text.muted)} wrap="truncate">
+						{'  '}
+						{lastMessageText.replaceAll(/[\n\r]+/g, ' ')}
+					</Text>
 				)
 			)}
 		</Box>

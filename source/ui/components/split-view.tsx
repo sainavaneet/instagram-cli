@@ -1,5 +1,6 @@
 import React from 'react';
-import {Box, Text} from 'ink';
+import {Box} from 'ink';
+import {Divider, Hint, Label} from '../theme/index.js';
 import AltScreen from './alt-screen.js';
 import FullScreen from './full-screen.js';
 
@@ -23,18 +24,23 @@ export default function SplitView({
 			<FullScreen>
 				<Box flexDirection="column" height="100%" width="100%">
 					<Box flexDirection="row" gap={2} flexGrow={1}>
-						{/* Sidebar */}
+						{/* Sidebar — separated from main by a single dim vertical rule */}
 						<Box
+							borderRight
+							borderDimColor
 							flexDirection="column"
-							borderStyle="round"
+							borderStyle="single"
+							borderTop={false}
+							borderBottom={false}
+							borderLeft={false}
 							paddingX={1}
 							width={sidebarWidth}
 							flexShrink={0}
 							height="100%"
 							overflow="hidden"
 						>
-							<Text color="cyan">{sidebarTitle}</Text>
-							<Box height={1} />
+							<Label isAccent>{sidebarTitle}</Label>
+							<Divider />
 							<Box flexDirection="column" flexGrow={1} overflow="hidden">
 								{sidebarContent}
 							</Box>
@@ -43,8 +49,7 @@ export default function SplitView({
 						{/* Main Content */}
 						<Box
 							flexDirection="column"
-							borderStyle="round"
-							padding={1}
+							paddingX={1}
 							flexGrow={1}
 							height="100%"
 							overflow="hidden"
@@ -54,8 +59,8 @@ export default function SplitView({
 					</Box>
 
 					{/* Footer */}
-					<Box marginTop={1}>
-						<Text dimColor>{footerText}</Text>
+					<Box marginTop={1} paddingX={1}>
+						<Hint>{footerText}</Hint>
 					</Box>
 				</Box>
 			</FullScreen>

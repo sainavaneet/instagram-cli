@@ -4,6 +4,7 @@ import open from 'open';
 import {type ImageProtocolName} from 'ink-picture';
 import {type Post, type MediaCandidate} from '../../types/instagram.js';
 import {createContextualLogger} from '../../utils/logger.js';
+import {accent, Divider, Hint, Label} from '../theme/index.js';
 import MediaPane from './media-pane.js';
 import FullScreen from './full-screen.js';
 
@@ -99,10 +100,9 @@ export default function SinglePostView({post, protocol, onClose}: Properties) {
 	return (
 		<FullScreen>
 			<Box flexDirection="column" height="100%" width="100%">
-				<Box borderStyle="round" borderColor="blue" paddingX={1}>
-					<Text bold color="blue">
-						Shared post by @{post.user.username}
-					</Text>
+				<Box flexDirection="column" paddingX={1}>
+					<Label isAccent>Shared post by @{post.user.username}</Label>
+					<Divider />
 				</Box>
 
 				<Box flexDirection="row" flexGrow={1} overflow="hidden" gap={1}>
@@ -126,12 +126,12 @@ export default function SinglePostView({post, protocol, onClose}: Properties) {
 						justifyContent="flex-start"
 					>
 						<Box flexDirection="row" marginBottom={1}>
-							<Text color="green">👤 {post.user.username}</Text>
+							<Text {...accent.solid}>{post.user.username}</Text>
 							{post.taken_at && (
-								<Text color="gray">
+								<Hint>
 									{' ('}
 									{new Date(post.taken_at * 1000).toLocaleString()})
-								</Text>
+								</Hint>
 							)}
 						</Box>
 						<Text wrap="wrap">{post.caption?.text ?? 'No caption'}</Text>
@@ -143,10 +143,8 @@ export default function SinglePostView({post, protocol, onClose}: Properties) {
 					</Box>
 				</Box>
 
-				<Box marginTop={1}>
-					<Text dimColor>
-						h/l: navigate carousel, o: open in browser, Esc/q: close
-					</Text>
+				<Box marginTop={1} paddingX={1}>
+					<Hint>h/l: navigate carousel, o: open in browser, Esc/q: close</Hint>
 				</Box>
 			</Box>
 		</FullScreen>

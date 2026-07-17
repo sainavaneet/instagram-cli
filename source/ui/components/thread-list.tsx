@@ -30,8 +30,11 @@ export default function ThreadList({
 	const [scrollOffset, setScrollOffset] = useState(0);
 
 	const containerReference = useRef<DOMElement>(null as unknown as DOMElement);
-	// Item height is constant because content is always truncated to fit the height
-	const itemHeight = 4;
+	// Each ThreadItem is a fixed two lines (no per-row border) plus a one-line
+	// margin between items — three rows total. Keep this in sync with the
+	// ThreadItem layout and the wrapper marginBottom below, or viewport paging
+	// and mouse click-to-select will drift.
+	const itemHeight = 3;
 
 	// useBoxMetrics re-renders automatically on layout changes (terminal resize, sibling changes, etc.)
 	const {height: containerHeight, hasMeasured} =

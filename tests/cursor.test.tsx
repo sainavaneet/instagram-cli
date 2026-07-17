@@ -30,16 +30,16 @@ function sgrLeftPress(col: number, row: number): string {
 }
 
 // In the test environment the outer box fills the full 100-column viewport:
-//   layout = { x: 0, y: 0, width: 100, height: 3 }
-// The bordered inner box (borderStyle="round", paddingX={1}) has a "❯ " prompt
-// prefix (2 columns) before the TextInput, so text starts at:
-//   inputTextX = layout.x + 2 + 2 = 4  (0-indexed: border + padding + prompt)
-//   inputTextY = layout.y + 1 = 1  (0-indexed)
+//   layout = { x: 0, y: 0, width: 100, height: 2 }
+// The input row has no border or padding now — just a one-line Divider above it
+// and a "❯ " prompt prefix (2 columns) before the TextInput, so text starts at:
+//   inputTextX = layout.x + 2 = 2  (0-indexed: prompt only)
+//   inputTextY = layout.y + 1 = 1  (0-indexed: 1 divider row above the input)
 // Translating to 1-indexed SGR coordinates:
 //   SGR col = inputTextX + colInLine + 1
 //   SGR row = inputTextY + lineIndex + 1
-const INPUT_TEXT_X = 4; // 0-indexed column where text starts (after border, padding, prompt)
-const INPUT_TEXT_Y = 1; // 0-indexed row where text starts
+const INPUT_TEXT_X = 2; // 0-indexed column where text starts (after the prompt)
+const INPUT_TEXT_Y = 1; // 0-indexed row where text starts (below the divider)
 
 /** Convert a (lineIndex, colInLine) pair to an SGR left-press sequence. */
 function clickAt(lineIndex: number, colInLine: number): string {

@@ -17,7 +17,6 @@ test('ThreadItem renders thread title and unread indicator', t => {
 
 	t.truthy(output?.includes(unreadThread.title), 'Should display thread title');
 	t.truthy(output?.includes('●'), 'Should display unread indicator');
-	t.truthy(output?.includes('NEW'), 'Should display the NEW badge when unread');
 	unmount();
 });
 
@@ -45,8 +44,9 @@ test('ThreadItem renders selected state', t => {
 	);
 	const output = lastFrame();
 
-	// Selected threads have rounded corners in the Box component
-	t.truthy(output?.includes('\u2500'), 'Should display selected state');
+	// Selected threads show the accent caret instead of a border.
+	const caret = String.fromCodePoint(0x27_6f);
+	t.truthy(output?.includes(caret), 'Should display selected state');
 	unmount();
 });
 

@@ -8,6 +8,7 @@ import {
 } from '../../utils/autocomplete.js';
 import {useMouse} from '../context/mouse-context.js';
 import {measureAbsoluteLayout} from '../hooks/use-content-size.js';
+import {accent, Divider, glyphs, palette, text} from '../theme/index.js';
 import {AutocompleteView} from './autocomplete-view.js';
 import TextInput from './text-input.js';
 
@@ -320,16 +321,18 @@ export default function InputBox({
 				const clickY = event.row - 1;
 				const layout = measureAbsoluteLayout(node);
 
-				// Text rows start 1 row below the box top (border row) and end
-				// 1 row above the box bottom (border row).
-				const inputTextY = layout.y + 1;
-				const inputTextYMax = layout.y + layout.height - 2;
+				// Layout (no border now): row 0 is the Divider, the input row(s)
+				// start on the next row. Text wraps across `lineWidth` columns.
+				const inputTextX = layout.x + 2; // prompt "❯ " is 2 columns
+				const lineWidth = Math.max(1, layout.width - 2);
+				const inputTextY = layout.y + 1; // 1 divider row above the input
+				const visualLineCount = wrapAnsi(messageRef.current, lineWidth, {
+					trim: false,
+					hard: true,
+				}).split('\n').length;
+				const inputTextYMax = inputTextY + Math.max(1, visualLineCount) - 1;
 				if (clickY < inputTextY || clickY > inputTextYMax) return false;
 
-				// Text starts 4 columns in: border(1) + padding(1) + prompt "❯ "(2).
-				const inputTextX = layout.x + 4;
-				// Inner text area: full width minus 2 borders, 2 padding, 2 prompt chars.
-				const lineWidth = Math.max(1, layout.width - 6);
 				const lineIndex = clickY - inputTextY;
 				const colInLine = Math.max(0, clickX - inputTextX);
 				const cursorPos = clickToCharOffset(
@@ -353,16 +356,11 @@ export default function InputBox({
 				: null;
 
 	return (
-		<Box ref={boxRef} flexDirection="column">
-			<Box
-				borderStyle="round"
-				borderColor={isDisabled ? 'gray' : 'magenta'}
-				paddingX={1}
-				flexDirection="row"
-				alignItems="center"
-			>
-				<Text bold={!isDisabled} color={isDisabled ? 'gray' : 'magenta'}>
-					{isDisabled ? '⊘ ' : '❯ '}
+		<Box ref={boxRef} flexDirection="column" width="100%">
+			<Divider />
+			<Box flexDirection="row" alignItems="center">
+				<Text {...(isDisabled ? text.muted : accent.bold)}>
+					{isDisabled ? '⊘ ' : `${glyphs.caret} `}
 				</Text>
 				<Box flexGrow={1}>
 					<TextInput
@@ -381,7 +379,7 @@ export default function InputBox({
 					/>
 				</Box>
 				{modeTag && (
-					<Text bold backgroundColor="magenta" color="white">
+					<Text bold inverse color={palette.accent}>
 						{modeTag}
 					</Text>
 				)}
